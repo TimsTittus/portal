@@ -1,183 +1,221 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import {
-  Calendar,
-  Trophy,
-  QrCode,
-  Award,
-  Users,
-  ArrowRight,
-  Zap,
-  Shield,
-  BarChart3,
-} from "lucide-react";
-
-const features = [
-  {
-    icon: <Calendar className="w-6 h-6" />,
-    title: "Event Management",
-    description:
-      "Browse, register, and track events — workshops, hackathons, seminars, and more.",
-  },
-  {
-    icon: <QrCode className="w-6 h-6" />,
-    title: "QR Attendance",
-    description:
-      "Secure QR-based attendance with HMAC verification. Just scan and go.",
-  },
-  {
-    icon: <Trophy className="w-6 h-6" />,
-    title: "Leaderboards",
-    description:
-      "Earn points for participation, climb the rankings, and unlock badges.",
-  },
-  {
-    icon: <Award className="w-6 h-6" />,
-    title: "Digital Certificates",
-    description:
-      "Auto-generated PDF certificates for every event you attend.",
-  },
-  {
-    icon: <Users className="w-6 h-6" />,
-    title: "Team Formation",
-    description:
-      "Find teammates for hackathons and projects. Match skills and build together.",
-  },
-  {
-    icon: <BarChart3 className="w-6 h-6" />,
-    title: "Analytics Dashboard",
-    description:
-      "Real-time insights for coordinators and execom. Track engagement and growth.",
-  },
-];
+import { ArrowRight, Star, Shield, Zap, Award } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-6 md:px-12 py-4 border-b border-gray-100">
+    <div className="min-h-screen bg-[#FBF5E8] text-[#1A1A2E] flex flex-col selection:bg-[#D8615C] selection:text-white">
+      {/* Navigation */}
+      <nav className="flex items-center justify-between px-6 md:px-16 py-5 bg-[#FBF5E8] border-b border-[#EAE3D2]/40">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1a1a2e] flex items-center justify-center">
-            <span className="text-white font-bold text-lg">I.</span>
+          <div className="w-10 h-10 rounded-2xl bg-[#1A1A2E] flex items-center justify-center shadow-lg shadow-black/10">
+            <span className="text-[#FBF5E8] font-serif font-bold text-xl">I.</span>
           </div>
-          <span className="text-lg font-bold text-[#1a1a2e] hidden md:block">
+          <span className="text-lg font-serif font-bold text-[#1A1A2E] tracking-tight">
             IEDC Portal
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Link href="/auth/login">
             <Button
               variant="ghost"
-              className="rounded-xl text-sm font-medium text-gray-600 hover:text-[#1a1a2e]"
+              className="rounded-full text-sm font-medium text-gray-700 hover:text-[#1A1A2E] hover:bg-[#EAE3D2]/50 px-5"
             >
               Sign In
             </Button>
           </Link>
           <Link href="/auth/register">
-            <Button className="rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a4e] text-sm font-medium">
+            <Button className="rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#FBF5E8] px-6 text-sm font-medium shadow-md hover:shadow-lg transition-all">
               Get Started
             </Button>
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="px-6 md:px-12 py-16 md:py-24 max-w-5xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 bg-gray-50 text-gray-600 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border border-gray-100">
-          <Zap className="w-4 h-4 text-yellow-500" />
-          Built for 3,000+ students
+      {/* Hero Section */}
+      <section className="px-6 md:px-16 py-12 md:py-20 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
+        {/* Left Content */}
+        <div className="lg:col-span-7 space-y-8 text-left">
+          {/* Avatar stack + Social Proof */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex -space-x-3">
+              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
+              </div>
+              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
+                <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
+              </div>
+              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
+              </div>
+              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 text-[#D8615C]">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-current" />
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                Trusted by 3,000+ student innovators
+              </p>
+            </div>
+          </div>
+
+          {/* Main Title */}
+          <h1 className="text-5xl md:text-7xl font-serif font-black text-[#1A1A2E] leading-[1.08] tracking-tight">
+            Grow Your <br className="hidden md:inline" />
+            Innovation <br />
+            <span className="italic text-[#D8615C] font-semibold">Effortlessly</span>
+          </h1>
+
+          <p className="text-gray-600 text-lg md:text-xl leading-relaxed max-w-xl">
+            Create, build, and showcase your ideas with our all-in-one engagement platform. 
+            Track workshops, register for events, verify attendance with secure QR codes, 
+            and earn points for your portfolio.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+            <Link href="/auth/register" className="w-full sm:w-auto">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#FBF5E8] h-14 px-8 text-base font-semibold transition-all shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-0.5 duration-200"
+              >
+                Join the Network Today
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+          </div>
+
+          {/* Feature highlights */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[#1A1A2E]/60 pt-4 border-t border-[#EAE3D2]/50">
+            <span className="flex items-center gap-2 font-medium">
+              <Shield className="w-4.5 h-4.5 text-[#6EA2F8]" />
+              Secure QR Attendance
+            </span>
+            <span className="flex items-center gap-2 font-medium">
+              <Zap className="w-4.5 h-4.5 text-[#84C974]" />
+              Real-time Portfolio Points
+            </span>
+            <span className="flex items-center gap-2 font-medium">
+              <Award className="w-4.5 h-4.5 text-[#D8615C]" />
+              Automated Certificates
+            </span>
+          </div>
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-bold text-[#1a1a2e] leading-tight tracking-tight">
-          Your Innovation Hub,
-          <br />
-          <span className="text-gray-400">All in One Place</span>
-        </h1>
-
-        <p className="text-gray-500 text-lg md:text-xl mt-6 max-w-2xl mx-auto leading-relaxed">
-          The IEDC Student Engagement Portal — manage events, track participation,
-          earn recognition, and build your innovation portfolio.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
-          <Link href="/auth/register">
-            <Button
-              size="lg"
-              className="rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a4e] h-12 px-8 text-base font-medium w-full sm:w-auto"
-            >
-              Join IEDC
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
-          <Link href="/auth/login">
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-xl h-12 px-8 text-base font-medium border-gray-200 w-full sm:w-auto"
-            >
-              Sign In
-            </Button>
-          </Link>
-        </div>
-
-        <div className="flex items-center justify-center gap-6 mt-8 text-sm text-gray-400">
-          <span className="flex items-center gap-1.5">
-            <Shield className="w-4 h-4" />
-            Secure QR Auth
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4" />
-            Real-time Tracking
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Award className="w-4 h-4" />
-            Auto Certificates
-          </span>
+        {/* Right Content - Hero Illustration */}
+        <div className="lg:col-span-5 flex justify-center relative">
+          {/* Pastel decorative circle background */}
+          <div className="absolute inset-0 bg-[#EAE3D2]/35 rounded-full filter blur-3xl -z-10 scale-90" />
+          <div className="relative w-full max-w-[420px] aspect-square rounded-[2.5rem] border-4 border-[#1A1A2E] bg-[#EAE3D2]/20 overflow-hidden shadow-2xl transition-transform hover:rotate-1 duration-500">
+            <Image
+              src="/illustrations/hero-innovator.png"
+              alt="IEDC Innovation"
+              fill
+              className="object-cover scale-[1.02]"
+              priority
+            />
+          </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="px-6 md:px-12 py-16 bg-gray-50/50 border-t border-gray-100">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1a1a2e] text-center mb-12">
-            Everything You Need
-          </h2>
+      {/* Cards Section */}
+      <section className="bg-white px-6 md:px-16 py-20 border-t border-[#EAE3D2]/30">
+        <div className="max-w-7xl mx-auto space-y-16">
+          <div className="text-center space-y-4 max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-5xl font-serif font-black text-[#1A1A2E]">
+              Everything You Need in One Hub
+            </h2>
+            <p className="text-gray-500 text-base md:text-lg">
+              Explore custom features engineered to elevate your engineering and entrepreneurship journey.
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300 group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-[#1a1a2e] group-hover:bg-[#1a1a2e] group-hover:text-white transition-all duration-300 mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="font-semibold text-[#1a1a2e] text-base">
-                  {feature.title}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Card 1 - Blue Theme */}
+            <div className="bg-[#6EA2F8] rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between overflow-hidden shadow-xl hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 group h-[520px]">
+              <div className="space-y-4">
+                <h3 className="text-3xl md:text-4xl font-serif font-bold text-[#1A1A2E]">
+                  Event <br />
+                  Ecosystem
                 </h3>
-                <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-                  {feature.description}
+                <p className="text-[#1A1A2E]/80 text-sm leading-relaxed max-w-[240px]">
+                  Browse and register for workshops, hackathons, and webinars. Get instant access.
                 </p>
               </div>
-            ))}
+              <div className="relative w-full h-[240px] mt-6 self-center">
+                <Image
+                  src="/illustrations/student-laptop-blue.png"
+                  alt="Events illustration"
+                  fill
+                  className="object-contain group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            </div>
+
+            {/* Card 2 - Green Theme */}
+            <div className="bg-[#84C974] rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between overflow-hidden shadow-xl hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 group h-[520px]">
+              <div className="space-y-4">
+                <h3 className="text-3xl md:text-4xl font-serif font-bold text-[#1A1A2E]">
+                  Project <br />
+                  Incubator
+                </h3>
+                <p className="text-[#1A1A2E]/80 text-sm leading-relaxed max-w-[240px]">
+                  Submit projects, form dynamic hackathon teams, and review outcomes.
+                </p>
+              </div>
+              <div className="relative w-full h-[240px] mt-6 self-center">
+                <Image
+                  src="/illustrations/student-laptop-green.png"
+                  alt="Projects illustration"
+                  fill
+                  className="object-contain group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            </div>
+
+            {/* Card 3 - Coral Red Theme */}
+            <div className="bg-[#D8615C] rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between overflow-hidden shadow-xl hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 group h-[520px]">
+              <div className="space-y-4 text-white">
+                <h3 className="text-3xl md:text-4xl font-serif font-bold text-[#1A1A2E]">
+                  Leaderboard <br />
+                  & Badges
+                </h3>
+                <p className="text-[#1A1A2E]/90 text-sm leading-relaxed max-w-[240px]">
+                  Climb ranks, check your engagement levels, and earn certifications.
+                </p>
+              </div>
+              <div className="relative w-full h-[240px] mt-6 self-center">
+                <Image
+                  src="/illustrations/student-jumping-red.png"
+                  alt="Gamification illustration"
+                  fill
+                  className="object-contain group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="px-6 md:px-12 py-8 border-t border-gray-100">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">I.</span>
+      <footer className="px-6 md:px-16 py-10 bg-[#FAF6EE] border-t border-[#EAE3D2]/40">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#1A1A2E] flex items-center justify-center">
+              <span className="text-[#FBF5E8] font-serif font-bold text-sm">I.</span>
             </div>
-            <span className="text-sm font-semibold text-[#1a1a2e]">
-              IEDC Portal
+            <span className="text-sm font-serif font-bold text-[#1A1A2E]">
+              IEDC Student Engagement Portal
             </span>
           </div>
-          <p className="text-xs text-gray-400">
-            © {new Date().getFullYear()} Innovation & Entrepreneurship Development Cell.
-            All rights reserved.
+          <p className="text-xs text-gray-500 font-medium">
+            © {new Date().getFullYear()} Innovation & Entrepreneurship Development Cell. All rights reserved.
           </p>
         </div>
       </footer>
