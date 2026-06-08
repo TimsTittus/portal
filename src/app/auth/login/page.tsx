@@ -50,21 +50,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-gray-100 p-8 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white rounded-[2.5rem] border border-[#EAE3D2]/60 shadow-xl shadow-black/5 p-8 md:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-11 h-11 rounded-xl bg-[#1a1a2e] flex items-center justify-center">
-          <span className="text-white font-bold text-lg">I.</span>
+        <div className="w-10 h-10 rounded-2xl bg-[#1A1A2E] flex items-center justify-center shadow-md shadow-black/10">
+          <span className="text-[#FBF5E8] font-serif font-bold text-lg">I.</span>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[#1a1a2e]">Welcome back</h1>
-          <p className="text-sm text-gray-500">Sign in to your IEDC Portal</p>
+          <h1 className="text-2xl font-serif font-black text-[#1A1A2E] leading-tight">Welcome Back</h1>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">Sign in to your IEDC Portal</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
             Email
           </Label>
           <Input
@@ -73,15 +73,15 @@ export default function LoginPage() {
             placeholder="you@college.edu.in"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-xl h-11 bg-gray-50 border-gray-200 focus:bg-white"
+            className="rounded-xl h-11 bg-[#FAF6EE]/50 border-[#EAE3D2] focus:bg-white focus-visible:ring-[#1A1A2E]"
             required
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label
             htmlFor="password"
-            className="text-sm font-medium text-gray-700"
+            className="text-xs font-semibold uppercase tracking-wider text-gray-500"
           >
             Password
           </Label>
@@ -91,13 +91,13 @@ export default function LoginPage() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-xl h-11 bg-gray-50 border-gray-200 focus:bg-white"
+            className="rounded-xl h-11 bg-[#FAF6EE]/50 border-[#EAE3D2] focus:bg-white focus-visible:ring-[#1A1A2E]"
             required
           />
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 border border-red-100">
+          <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 border border-red-100 font-medium">
             {error}
           </div>
         )}
@@ -105,7 +105,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full h-11 rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a4e] text-white font-medium transition-all duration-200"
+          className="w-full h-12 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#FBF5E8] font-semibold transition-all shadow-md shadow-black/5 hover:shadow-lg hover:-translate-y-0.5 duration-200 mt-2"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -115,11 +115,11 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      <p className="text-center text-sm text-gray-500 mt-6 font-medium">
         Don&apos;t have an account?{" "}
         <Link
           href="/auth/register"
-          className="text-[#1a1a2e] font-semibold hover:underline"
+          className="text-[#D8615C] font-bold hover:underline"
         >
           Register
         </Link>

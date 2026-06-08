@@ -37,34 +37,6 @@ export default function LandingPage() {
       <section className="px-6 md:px-16 py-12 md:py-20 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
         {/* Left Content */}
         <div className="lg:col-span-7 space-y-8 text-left">
-          {/* Avatar stack + Social Proof */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex -space-x-3">
-              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
-              </div>
-              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
-                <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
-              </div>
-              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
-              </div>
-              <div className="w-9 h-9 rounded-full border-2 border-[#FBF5E8] overflow-hidden bg-gray-200 relative">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100&h=100" alt="Student" className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-1 text-[#D8615C]">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-current" />
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 font-medium mt-0.5">
-                Trusted by 3,000+ student innovators
-              </p>
-            </div>
-          </div>
-
           {/* Main Title */}
           <h1 className="text-5xl md:text-7xl font-serif font-black text-[#1A1A2E] leading-[1.08] tracking-tight">
             Grow Your <br className="hidden md:inline" />
@@ -73,8 +45,8 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-gray-600 text-lg md:text-xl leading-relaxed max-w-xl">
-            Create, build, and showcase your ideas with our all-in-one engagement platform. 
-            Track workshops, register for events, verify attendance with secure QR codes, 
+            Create, build, and showcase your ideas with our all-in-one engagement platform.
+            Track workshops, register for events, verify attendance with secure QR codes,
             and earn points for your portfolio.
           </p>
 
