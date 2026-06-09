@@ -8,23 +8,28 @@ const DEPT_CODES: Record<string, string> = {
   MEE: "MEE",
   CIV: "CIV",
   EEE: "EEE",
-  IT: "IT",
   MCA: "MCA",
   "Computer Science and Engineering": "CSE",
   "Electronics and Communication": "ECE",
   "Mechanical Engineering": "MEE",
   "Civil Engineering": "CIV",
-  "Electrical Engineering": "EEE",
-  "Information Technology": "IT",
+  "Electrical and Electronics Engineering": "EEE",
   "Master of Computer Applications": "MCA",
+  CC: "CC",
+  CA: "CA",
+  AIDS: "AIDS",
+  ER: "ER",
+  ME: "ME",
+  CE: "CE",
+  IMCA: "IMCA",
 };
 
 export async function generateIEDCId(
   department: string,
-  joiningYear?: number
+  graduationYear?: number
 ): Promise<string> {
   const deptCode = DEPT_CODES[department] || department;
-  const year = joiningYear || new Date().getFullYear();
+  const year = graduationYear || (new Date().getFullYear() + 4);
   const key = `${deptCode}_${year}`;
 
   // Atomic upsert with increment

@@ -13,10 +13,14 @@ export const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8, "Confirm password must be at least 8 characters"),
   admissionNumber: z.string().min(1, "Admission number is required"),
   department: z.string().min(1, "Department is required"),
-  batch: z.string().regex(/^\d{4}-\d{4}$/, "Batch must be in format YYYY-YYYY"),
+  batch: z.string().regex(/^\d{4}$/, "Graduation year must be a 4-digit number (e.g. 2027)"),
   phone: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 // ============================================================

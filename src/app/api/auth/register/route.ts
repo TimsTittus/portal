@@ -67,8 +67,8 @@ export async function POST(request: Request) {
     }
 
     // Generate IEDC ID
-    const joiningYear = parseInt(batch.split("-")[0]) || new Date().getFullYear();
-    const iecdId = await generateIEDCId(department, joiningYear);
+    const graduationYear = parseInt(batch) || (new Date().getFullYear() + 4);
+    const iecdId = await generateIEDCId(department, graduationYear);
 
     // Generate QR secret
     const qrSecret = generateQRSecret();
