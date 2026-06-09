@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Trophy, Star, Loader2, Medal, Globe } from "lucide-react";
 import { LinkedinIcon, GithubIcon } from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
+import { cn, getGithubUsername } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -197,7 +197,7 @@ export default function LeaderboardPage() {
               <p className="font-mono text-xs font-bold text-gray-500 uppercase animate-pulse">Loading Profile...</p>
             </div>
           ) : selectedProfile ? (
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0 w-full">
               <div className="flex items-center gap-4 border-b border-[#EAE3D2]/40 pb-4">
                 <div className="w-14 h-14 rounded-2xl bg-[#1A1A2E] text-[#FBF5E8] flex items-center justify-center font-mono font-bold text-lg shadow-md shrink-0">
                   {(selectedProfile.name || "Student")
@@ -295,6 +295,21 @@ export default function LeaderboardPage() {
                       <Globe size={18} strokeWidth={2} />
                     </a>
                   )}
+                </div>
+              )}
+
+              {selectedProfile.githubUrl && getGithubUsername(selectedProfile.githubUrl) && (
+                <div className="pt-4 border-t border-[#EAE3D2]/40 space-y-2">
+                  <span className="font-mono text-[10px] font-bold text-gray-400 uppercase tracking-wider block">GitHub Contributions</span>
+                  <div className="w-full overflow-x-auto bg-[#FAF6EE]/50 border border-[#EAE3D2]/40 rounded-2xl p-3">
+                    <div className="min-w-[670px] flex justify-center items-center py-1">
+                      <img
+                        src={`https://ghchart.rshah.org/D8615C/${getGithubUsername(selectedProfile.githubUrl)}`}
+                        alt={`${selectedProfile.name}'s GitHub contributions`}
+                        className="w-full h-auto dark:invert dark:hue-rotate-180"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

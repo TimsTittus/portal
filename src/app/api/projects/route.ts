@@ -15,6 +15,38 @@ export async function GET(request: Request) {
   const page = parseInt(searchParams.get("page") || "0");
   const limit = parseInt(searchParams.get("limit") || "10");
   const status = searchParams.get("status") || "approved";
+  const my = searchParams.get("my") === "true";
+
+  if (my) {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const [profile] = await db
+      .select()
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, session.user.id));
+
+    if (!profile) {
+      return NextResponse.json({ projects: [], page, limit });
+    }
+
+    const projectsList = await db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          eq(projects.isDeleted, false),
+          eq(projects.submittedBy, profile.id)
+        )
+      )
+      .orderBy(desc(projects.submittedAt))
+      .limit(limit)
+      .offset(page * limit);
+
+    return NextResponse.json({ projects: projectsList, page, limit });
+  }
 
   const projectsList = await db
     .select()

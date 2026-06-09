@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FolderOpen, ExternalLink, GitBranch } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface ProjectData {
   id: string;
@@ -20,21 +21,51 @@ interface ProjectData {
 export default function StudentProjectsPage() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"browse" | "my">("browse");
 
   useEffect(() => {
     async function fetchProjects() {
+      setLoading(true);
       try {
-        const res = await fetch("/api/projects?status=approved&limit=20");
+        const url = activeTab === "browse"
+          ? "/api/projects?status=approved&limit=20"
+          : "/api/projects?my=true";
+        const res = await fetch(url);
         const data = await res.json();
         setProjects(data.projects || []);
       } catch (error) {
         console.error("Failed to fetch projects:", error);
+        setProjects([]);
       } finally {
         setLoading(false);
       }
     }
     fetchProjects();
-  }, []);
+  }, [activeTab]);
+
+  const getStatusBadge = (status: string | null) => {
+    switch (status) {
+      case "approved":
+        return (
+          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-xs font-semibold px-2 py-0.5 border shrink-0">
+            Approved
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge className="bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-lg text-xs font-semibold px-2 py-0.5 border shrink-0">
+            Rejected
+          </Badge>
+        );
+      case "pending":
+      default:
+        return (
+          <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50 hover:text-amber-700 rounded-lg text-xs font-semibold px-2 py-0.5 border shrink-0">
+            Pending
+          </Badge>
+        );
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -54,6 +85,32 @@ export default function StudentProjectsPage() {
         </Link>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-gray-100 pb-px">
+        <button
+          onClick={() => setActiveTab("browse")}
+          className={cn(
+            "px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200 cursor-pointer",
+            activeTab === "browse"
+              ? "border-[#1a1a2e] text-[#1a1a2e]"
+              : "border-transparent text-gray-400 hover:text-gray-600"
+          )}
+        >
+          Browse Projects
+        </button>
+        <button
+          onClick={() => setActiveTab("my")}
+          className={cn(
+            "px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200 cursor-pointer",
+            activeTab === "my"
+              ? "border-[#1a1a2e] text-[#1a1a2e]"
+              : "border-transparent text-gray-400 hover:text-gray-600"
+          )}
+        >
+          My Submissions
+        </button>
+      </div>
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
@@ -67,9 +124,12 @@ export default function StudentProjectsPage() {
               key={project.id}
               className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
             >
-              <h3 className="font-semibold text-[#1a1a2e] text-base">
-                {project.title}
-              </h3>
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="font-semibold text-[#1a1a2e] text-base">
+                  {project.title}
+                </h3>
+                {activeTab === "my" && getStatusBadge(project.status)}
+              </div>
               {project.description && (
                 <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                   {project.description}
@@ -122,7 +182,7 @@ export default function StudentProjectsPage() {
           <FolderOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">No projects yet</p>
           <p className="text-gray-400 text-sm mt-1">
-            Be the first to submit a project!
+            {activeTab === "browse" ? "Be the first to submit a project!" : "You haven't submitted any projects yet."}
           </p>
         </div>
       )}
