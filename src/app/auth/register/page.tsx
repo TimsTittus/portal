@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -46,15 +46,44 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [admissionStatus, setAdmissionStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+
+  useEffect(() => {
+    const admissionNo = formData.admissionNumber.trim();
+    if (!admissionNo) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/auth/check-admission?admissionNumber=${encodeURIComponent(admissionNo)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAdmissionStatus(data.available ? "available" : "taken");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.admissionNumber]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "admissionNumber") {
+      setAdmissionStatus(value.trim() ? "checking" : "idle");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    if (admissionStatus === "taken") {
+      setError("This admission number is already registered.");
+      setLoading(false);
+      return;
+    }
 
     const parsed = registerSchema.safeParse(formData);
     if (!parsed.success) {
@@ -226,6 +255,15 @@ export default function RegisterPage() {
                   className="rounded-xl h-11 bg-[#FAF6EE]/50 border-[#EAE3D2] focus:bg-white focus-visible:ring-[#1A1A2E]"
                   required
                 />
+                {admissionStatus === "checking" && (
+                  <p className="text-[10px] text-yellow-600 font-semibold mt-1 animate-pulse">Checking availability...</p>
+                )}
+                {admissionStatus === "available" && (
+                  <p className="text-[10px] text-green-600 font-semibold mt-1">✓ Available</p>
+                )}
+                {admissionStatus === "taken" && (
+                  <p className="text-[10px] text-red-600 font-semibold mt-1">✗ Already registered</p>
+                )}
               </div>
 
               <div className="space-y-1">
