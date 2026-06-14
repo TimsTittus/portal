@@ -3,9 +3,11 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { eventAttendance, eventRegistrations, studentProfiles, events } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { verifyDynamicQRPayload } from "@/lib/qr";
+import { verifyDynamicQRPayload, decryptPayload } from "@/lib/qr";
 import { awardPoints } from "@/lib/points";
 import { NextResponse } from "next/server";
+
+const CIPHER_PREFIX = "IEDC:";
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -20,7 +22,15 @@ export async function POST(request: Request) {
 
   let parsed: { iid?: string };
   try {
-    parsed = JSON.parse(qrData);
+    if (typeof qrData === "string" && qrData.startsWith(CIPHER_PREFIX)) {
+      const decrypted = decryptPayload(qrData.slice(CIPHER_PREFIX.length));
+      if (!decrypted) {
+        return NextResponse.json({ success: false, message: "Invalid QR code — decryption failed" }, { status: 400 });
+      }
+      parsed = JSON.parse(decrypted);
+    } else {
+      parsed = JSON.parse(qrData);
+    }
   } catch {
     return NextResponse.json({ success: false, message: "Invalid QR code format" }, { status: 400 });
   }
