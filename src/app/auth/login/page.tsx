@@ -8,7 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { loginSchema } from "@/lib/validators";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+
+function getDashboardPath(role?: string): string {
+  switch (role) {
+    case "faculty":
+      return "/faculty/reports";
+    case "coordinator":
+      return "/coordinator/events";
+    case "execom":
+      return "/execom/analytics";
+    default:
+      return "/student/dashboard";
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +30,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +56,16 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/student/dashboard");
+      setSuccess(true);
+
+      // Determine destination based on user role
+      const userRole = (result.data as { user?: { role?: string } })?.user?.role;
+      const destination = getDashboardPath(userRole);
+
+      // Brief pause so the user sees the success feedback, then navigate
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      router.push(destination);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -51,7 +74,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl bg-white rounded-[2.5rem] border border-[#EAE3D2]/60 shadow-xl shadow-black/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl md:rounded-[2.5rem] border border-[#EAE3D2]/60 shadow-xl shadow-black/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-1 md:grid-cols-2">
         {/* Left side: Premium Branding & Illustration */}
         <div className="hidden md:flex flex-col justify-between p-10 bg-[#FAF6EE] border-r border-[#EAE3D2]/40 relative">
@@ -90,15 +113,15 @@ export default function LoginPage() {
         </div>
 
         {/* Right side: Form */}
-        <div className="p-8 md:p-10 flex flex-col justify-center">
+        <div className="px-5 py-8 sm:px-8 sm:py-10 md:p-10 flex flex-col justify-center">
           {/* Mobile Branding */}
           <div className="flex items-center gap-3 mb-6 md:hidden">
-            <div className="w-9 h-9 rounded-xl bg-[#1A1A2E] flex items-center justify-center shadow-md shadow-black/10">
+            <div className="w-9 h-9 rounded-xl bg-[#1A1A2E] flex items-center justify-center shadow-md shadow-black/10 shrink-0">
               <span className="text-[#FBF5E8] font-serif font-bold text-md">I.</span>
             </div>
-            <div>
-              <h1 className="text-xl font-serif font-black text-[#1A1A2E] leading-tight">Welcome Back</h1>
-              <p className="text-[10px] text-gray-500 font-medium">Sign in to your IEDC Portal</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-serif font-black text-[#1A1A2E] leading-tight truncate">Welcome Back</h1>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Sign in to your IEDC Portal</p>
             </div>
           </div>
 
@@ -108,7 +131,7 @@ export default function LoginPage() {
             <p className="text-xs text-gray-500 font-medium mt-0.5">Sign in to your IEDC Portal</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Email
@@ -119,8 +142,9 @@ export default function LoginPage() {
                 placeholder="you@college.edu.in"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="rounded-xl h-11 bg-[#FAF6EE]/50 border-[#EAE3D2] focus:bg-white focus-visible:ring-[#1A1A2E]"
+                className="rounded-xl h-11 sm:h-11 text-base sm:text-sm bg-[#FAF6EE]/50 border-[#EAE3D2] focus:bg-white focus-visible:ring-[#1A1A2E]"
                 required
+                disabled={loading || success}
               />
             </div>
 
@@ -138,32 +162,47 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="rounded-xl h-11 bg-[#FAF6EE]/50 border-[#EAE3D2] focus:bg-white focus-visible:ring-[#1A1A2E] pr-10"
+                  className="rounded-xl h-11 sm:h-11 text-base sm:text-sm bg-[#FAF6EE]/50 border-[#EAE3D2] focus:bg-white focus-visible:ring-[#1A1A2E] pr-12"
                   required
+                  disabled={loading || success}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-gray-400 hover:text-gray-600 active:text-gray-800 transition-colors rounded-r-xl touch-manipulation"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-[18px] h-[18px] sm:w-4 sm:h-4" /> : <Eye className="w-[18px] h-[18px] sm:w-4 sm:h-4" />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 border border-red-100 font-medium">
+              <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 border border-red-100 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="bg-emerald-50 text-emerald-700 text-sm rounded-xl px-4 py-3 border border-emerald-100 font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                Signed in successfully! Redirecting…
               </div>
             )}
 
             <Button
               type="submit"
-              disabled={loading}
-              className="w-full h-12 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#FBF5E8] font-semibold transition-all shadow-md shadow-black/5 hover:shadow-lg hover:-translate-y-0.5 duration-200 mt-2"
+              disabled={loading || success}
+              className="w-full h-12 sm:h-12 rounded-full bg-[#1A1A2E] hover:bg-[#2A2A4E] text-[#FBF5E8] font-semibold text-base sm:text-sm transition-all shadow-md shadow-black/5 hover:shadow-lg hover:-translate-y-0.5 duration-200 mt-2 touch-manipulation"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 sm:w-4 sm:h-4 animate-spin" />
+              ) : success ? (
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 sm:w-4 sm:h-4" />
+                  Success
+                </span>
               ) : (
                 "Sign In"
               )}
