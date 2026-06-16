@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 import { EventCard } from "@/components/events/event-card";
+import { BadgeShowcase } from "@/components/badges/badge-showcase";
 import {
   Calendar, Trophy, Award, TrendingUp, Sparkles, LogOut, Layout,
   ChevronDown, Zap, Users, Wrench, Lightbulb, Star, Gift, Clock,
@@ -247,6 +248,11 @@ export default function StudentDashboard() {
             0
           </p>
         </Link>
+      </div>
+
+      {/* Badge Showcase */}
+      <div className="bg-white rounded-[2rem] border border-[#EAE3D2]/70 p-6 shadow-sm">
+        <BadgeShowcase maxDisplay={8} showViewAll />
       </div>
 
       {/* Points History — Collapsible */}

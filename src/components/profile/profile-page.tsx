@@ -18,6 +18,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { getGithubUsername } from "@/lib/utils";
+import { BadgeShowcase } from "@/components/badges/badge-showcase";
 
 const QR_WINDOW = 30; // seconds — matches server constant
 
@@ -447,6 +448,13 @@ export default function ProfilePage() {
           <DynamicQR onOpenModal={(url) => { setModalQrUrl(url); setIsQRModalOpen(true); }} />
         )}
       </div>
+
+      {/* Earned Badges */}
+      {isStudent && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <BadgeShowcase maxDisplay={10} showViewAll />
+        </div>
+      )}
 
       {/* Edit form */}
       {editing && (

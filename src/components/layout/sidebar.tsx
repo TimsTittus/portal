@@ -16,6 +16,7 @@ import {
   Users,
   ScanLine,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
@@ -104,6 +105,7 @@ export const studentNavItems: NavItem[] = [
   { label: "Dashboard", href: "/student/dashboard", icon: <LayoutDashboard /> },
   { label: "Events", href: "/student/events", icon: <Calendar /> },
   { label: "Leaderboard", href: "/student/leaderboard", icon: <Trophy /> },
+  { label: "Badges", href: "/student/badges", icon: <Shield /> },
   { label: "Projects", href: "/student/projects", icon: <FolderOpen /> },
   { label: "Certificates", href: "/student/certificates", icon: <Award /> },
   { label: "Profile", href: "/student/profile", icon: <User /> },

@@ -6,8 +6,10 @@ import {
   badges,
   studentBadges,
   eventAttendance,
+  eventRegistrations,
+  projects,
 } from "@/db/schema";
-import { eq, sql, and, count } from "drizzle-orm";
+import { eq, sql, and, count, desc, asc } from "drizzle-orm";
 
 type ActivityType =
   | "event_participation"
@@ -19,6 +21,14 @@ type ActivityType =
   | "startup_idea"
   | "manual_award";
 
+export type BadgeCriteria =
+  | { type: "points"; threshold: number }
+  | { type: "event_count"; min: number }
+  | { type: "project_count"; min: number }
+  | { type: "volunteer_count"; min: number }
+  | { type: "streak"; min: number };
+
+// POINTS
 export async function awardPoints(params: {
   studentId: string;
   activityType: ActivityType;
@@ -88,13 +98,123 @@ function getDefaultPoints(activityType: ActivityType): number {
   return defaults[activityType] || 10;
 }
 
-async function checkAndAwardBadges(studentId: string): Promise<void> {
+// BADGE ENGINE
+
+/**
+ * Lazy metric cache — only fetches data from DB when a criteria type
+ */
+interface MetricCache {
+  eventCount?: number;
+  projectCount?: number;
+  volunteerCount?: number;
+  streak?: number;
+}
+
+async function getEventCount(studentId: string, cache: MetricCache): Promise<number> {
+  if (cache.eventCount !== undefined) return cache.eventCount;
+  const [result] = await db
+    .select({ count: count() })
+    .from(eventAttendance)
+    .where(eq(eventAttendance.studentId, studentId));
+  cache.eventCount = result?.count ?? 0;
+  return cache.eventCount;
+}
+
+async function getProjectCount(studentId: string, cache: MetricCache): Promise<number> {
+  if (cache.projectCount !== undefined) return cache.projectCount;
+  const [result] = await db
+    .select({ count: count() })
+    .from(projects)
+    .where(and(eq(projects.submittedBy, studentId), eq(projects.status, "approved")));
+  cache.projectCount = result?.count ?? 0;
+  return cache.projectCount;
+}
+
+async function getVolunteerCount(studentId: string, cache: MetricCache): Promise<number> {
+  if (cache.volunteerCount !== undefined) return cache.volunteerCount;
+  const [result] = await db
+    .select({ count: count() })
+    .from(eventRegistrations)
+    .where(
+      and(eq(eventRegistrations.studentId, studentId), eq(eventRegistrations.role, "volunteer"))
+    );
+  cache.volunteerCount = result?.count ?? 0;
+  return cache.volunteerCount;
+}
+
+async function getStreak(studentId: string, cache: MetricCache): Promise<number> {
+  if (cache.streak !== undefined) return cache.streak;
+
+  // Get all attendance records ordered by scan date descending
+  const records = await db
+    .select({ eventId: eventAttendance.eventId, scannedAt: eventAttendance.scannedAt })
+    .from(eventAttendance)
+    .where(eq(eventAttendance.studentId, studentId))
+    .orderBy(desc(eventAttendance.scannedAt));
+
+  if (records.length === 0) {
+    cache.streak = 0;
+    return 0;
+  }
+
+  // Count consecutive attendance — each attendance record counts as one
+  // "consecutive" means no gap > 60 days between subsequent events
+  let streak = 1;
+  const MAX_GAP_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+
+  for (let i = 1; i < records.length; i++) {
+    const current = records[i].scannedAt;
+    const previous = records[i - 1].scannedAt;
+    if (!current || !previous) break;
+
+    const gap = previous.getTime() - current.getTime();
+    if (gap <= MAX_GAP_MS) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  cache.streak = streak;
+  return streak;
+}
+
+/**
+ * Evaluates a single badge criteria against a student's metrics.
+ */
+async function evaluateCriteria(
+  studentId: string,
+  totalPoints: number,
+  criteria: BadgeCriteria,
+  cache: MetricCache
+): Promise<boolean> {
+  switch (criteria.type) {
+    case "points":
+      return totalPoints >= criteria.threshold;
+    case "event_count":
+      return (await getEventCount(studentId, cache)) >= criteria.min;
+    case "project_count":
+      return (await getProjectCount(studentId, cache)) >= criteria.min;
+    case "volunteer_count":
+      return (await getVolunteerCount(studentId, cache)) >= criteria.min;
+    case "streak":
+      return (await getStreak(studentId, cache)) >= criteria.min;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Check all active badges and award any the student qualifies for.
+ * Returns the list of newly awarded badge IDs.
+ */
+export async function checkAndAwardBadges(studentId: string): Promise<string[]> {
   const [student] = await db
     .select()
     .from(studentProfiles)
     .where(eq(studentProfiles.id, studentId));
 
-  if (!student) return;
+  if (!student) return [];
 
   const allBadges = await db
     .select()
@@ -107,31 +227,34 @@ async function checkAndAwardBadges(studentId: string): Promise<void> {
     .where(eq(studentBadges.studentId, studentId));
 
   const earnedIds = new Set(earnedBadges.map((b) => b.badgeId));
-
-  const attendanceResult = await db
-    .select({ count: count() })
-    .from(eventAttendance)
-    .where(eq(eventAttendance.studentId, studentId));
-
-  const eventCount = attendanceResult[0]?.count || 0;
+  const cache: MetricCache = {};
+  const newlyAwarded: string[] = [];
 
   for (const badge of allBadges) {
     if (earnedIds.has(badge.id)) continue;
 
-    const criteria = badge.criteria as Record<string, unknown>;
-    let eligible = false;
+    const criteria = badge.criteria as BadgeCriteria;
+    if (!criteria?.type) continue;
 
-    if (criteria.type === "points") {
-      eligible = (student.totalPoints || 0) >= (criteria.threshold as number);
-    } else if (criteria.type === "event_count") {
-      eligible = eventCount >= (criteria.min as number);
-    }
+    const eligible = await evaluateCriteria(
+      studentId,
+      student.totalPoints ?? 0,
+      criteria,
+      cache
+    );
 
     if (eligible) {
-      await db.insert(studentBadges).values({
-        studentId,
-        badgeId: badge.id,
-      });
+      try {
+        await db
+          .insert(studentBadges)
+          .values({ studentId, badgeId: badge.id })
+          .onConflictDoNothing();
+        newlyAwarded.push(badge.id);
+      } catch {
+        // Race condition — another process already awarded it
+      }
     }
   }
+
+  return newlyAwarded;
 }
