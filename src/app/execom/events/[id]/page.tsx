@@ -13,7 +13,9 @@ import {
   TrendingUp,
   UserCheck,
   Loader2,
+  QrCode,
 } from "lucide-react";
+import Link from "next/link";
 
 interface EventDetail {
   id: string;
@@ -31,6 +33,20 @@ interface EventDetail {
   attendanceCount: number;
 }
 
+interface Registration {
+  id: string;
+  role: string;
+  registeredAt: string;
+  student: {
+    id: string;
+    name: string;
+    department: string;
+    batch: string;
+    iecdId: string;
+  };
+  attended: boolean;
+}
+
 export default function ExecomEventDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -38,13 +54,22 @@ export default function ExecomEventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
 
   useEffect(() => {
     async function fetchEvent() {
       try {
-        const res = await fetch(`/api/events/${params.id}`);
-        if (res.ok) {
-          setEvent(await res.json());
+        const [eventRes, regRes] = await Promise.all([
+          fetch(`/api/events/${params.id}`),
+          fetch(`/api/events/${params.id}/registrations`),
+        ]);
+        
+        if (eventRes.ok) {
+          setEvent(await eventRes.json());
+        }
+        if (regRes.ok) {
+          const regData = await regRes.json();
+          setRegistrations(regData.registrations || []);
         }
       } catch (error) {
         console.error("Failed to fetch event:", error);
@@ -137,12 +162,20 @@ export default function ExecomEventDetailPage() {
               {event.title}
             </h1>
           </div>
-          <Badge
-            variant="secondary"
-            className={`capitalize shrink-0 ${statusColors[event.status || "draft"]}`}
-          >
-            {event.status}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge
+              variant="secondary"
+              className={`capitalize shrink-0 ${statusColors[event.status || "draft"]}`}
+            >
+              {event.status}
+            </Badge>
+            <Link href={`/execom/events/${event.id}/scan`}>
+              <Button size="sm" className="bg-[#1a1a2e] text-white hover:bg-[#2a2a4e] rounded-xl">
+                <QrCode className="w-4 h-4 mr-2" />
+                Scan QR
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Meta */}
@@ -236,26 +269,81 @@ export default function ExecomEventDetailPage() {
               {message}
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            {["draft", "published", "ongoing", "completed", "cancelled"]
-              .filter((s) => s !== event.status)
-              .map((status) => (
+          <div className="flex flex-wrap gap-3">
+            {(() => {
+              const currentStatus = event.status || "draft";
+              const actions: Array<{ label: string; value: string; className: string }> = [];
+              
+              if (currentStatus === "draft") {
+                actions.push({ label: "Publish Event", value: "published", className: "bg-blue-600 hover:bg-blue-700 text-white border-transparent" });
+              } else if (currentStatus === "published") {
+                actions.push({ label: "Start Event (Ongoing)", value: "ongoing", className: "bg-green-600 hover:bg-green-700 text-white border-transparent" });
+                actions.push({ label: "Cancel Event", value: "cancelled", className: "bg-red-50 hover:bg-red-100 text-red-600 border-red-200" });
+              } else if (currentStatus === "ongoing") {
+                actions.push({ label: "Mark as Completed", value: "completed", className: "bg-purple-600 hover:bg-purple-700 text-white border-transparent" });
+              }
+              
+              if (actions.length === 0) {
+                return <p className="text-sm text-gray-500">No further status updates available.</p>;
+              }
+              
+              return actions.map((action) => (
                 <Button
-                  key={status}
+                  key={action.value}
                   variant="outline"
                   size="sm"
-                  className="rounded-xl capitalize"
+                  className={`rounded-xl font-medium shadow-sm transition-all ${action.className}`}
                   disabled={updating}
-                  onClick={() => updateStatus(status)}
+                  onClick={() => updateStatus(action.value)}
                 >
                   {updating ? (
-                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : null}
-                  {status}
+                  {action.label}
                 </Button>
-              ))}
+              ));
+            })()}
           </div>
         </div>
+      </div>
+
+      {/* Registrations Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
+        <h3 className="text-lg font-bold text-[#1a1a2e] mb-4">Registered Students ({registrations.length})</h3>
+        {registrations.length === 0 ? (
+          <p className="text-gray-500 text-sm">No students registered yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="bg-gray-50 text-gray-700">
+                <tr>
+                  <th className="px-4 py-3 rounded-tl-xl rounded-bl-xl">Name</th>
+                  <th className="px-4 py-3">IEDC ID</th>
+                  <th className="px-4 py-3">Dept & Year</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3 rounded-tr-xl rounded-br-xl">Attended</th>
+                </tr>
+              </thead>
+              <tbody>
+                {registrations.map((reg) => (
+                  <tr key={reg.id} className="border-b border-gray-50 last:border-0">
+                    <td className="px-4 py-3 font-medium text-gray-900">{reg.student.name}</td>
+                    <td className="px-4 py-3">{reg.student.iecdId}</td>
+                    <td className="px-4 py-3">{reg.student.department} ({reg.student.batch})</td>
+                    <td className="px-4 py-3 capitalize">{reg.role}</td>
+                    <td className="px-4 py-3">
+                      {reg.attended ? (
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-none">Present</Badge>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

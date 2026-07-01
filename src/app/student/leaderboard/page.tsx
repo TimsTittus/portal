@@ -182,7 +182,7 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       {/* ── Header row ── */}
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <h1 className="font-mono font-bold text-2xl uppercase tracking-tight flex items-center gap-2 dark:text-[#F5F5F7]">
@@ -324,7 +324,7 @@ export default function LeaderboardPage() {
           {findMeActive && me && !iAmInList && (
             <div
               id="leaderboard-find-me-banner"
-              className="border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/20 p-4 flex items-center gap-4 animate-in slide-in-from-bottom-4 duration-300"
+              className="border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/20 p-4 flex items-center gap-4"
             >
               <div className="w-8 font-mono font-black text-xl text-amber-600 italic shrink-0">
                 —
@@ -356,7 +356,7 @@ export default function LeaderboardPage() {
 
       {/* ── Profile Detail Dialog ── */}
       <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-        <DialogContent className="sm:max-w-md bg-white border border-[#EAE3D2]/60 rounded-3xl p-6 shadow-xl text-[#1A1A2E] animate-in zoom-in-95 duration-200">
+        <DialogContent className="sm:max-w-md bg-white border border-[#EAE3D2]/60 rounded-3xl p-6 shadow-xl text-[#1A1A2E]">
           <DialogTitle className="sr-only">Student Profile</DialogTitle>
           <DialogDescription className="sr-only">
             Detailed profile information for this student.

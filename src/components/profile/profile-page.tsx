@@ -29,7 +29,7 @@ function DynamicQR({ onOpenModal }: { onOpenModal: (url: string) => void }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchQR = useCallback(async () => {
+  const fetchQR = useCallback(async function fetchQR() {
     const res = await fetch("/api/student/qr", { cache: "no-store" });
     if (!res.ok) return;
     const { qrDataUrl, expiresIn } = await res.json();
@@ -596,7 +596,7 @@ export default function ProfilePage() {
       )}
       {/* QR Code Large Popup */}
       <Dialog open={isQRModalOpen} onOpenChange={setIsQRModalOpen}>
-        <DialogContent className="sm:max-w-sm bg-white border border-gray-100 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-200">
+        <DialogContent className="sm:max-w-sm bg-white border border-gray-100 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center text-center">
           <DialogTitle className="font-mono text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Official IEDC QR Code</DialogTitle>
           <DialogDescription className="sr-only">Scanning this QR code registers attendance at IEDC events.</DialogDescription>
           {modalQrUrl && (

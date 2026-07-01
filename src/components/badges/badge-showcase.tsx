@@ -25,12 +25,11 @@ interface BadgeShowcaseProps {
 }
 
 export function BadgeShowcase({ badges: propBadges, maxDisplay = 8, showViewAll = true }: BadgeShowcaseProps) {
-  const [badges, setBadges] = useState<BadgeData[]>(propBadges || []);
+  const [fetchedBadges, setFetchedBadges] = useState<BadgeData[]>([]);
   const [loading, setLoading] = useState(!propBadges);
 
   useEffect(() => {
     if (propBadges) {
-      setBadges(propBadges);
       return;
     }
 
@@ -39,7 +38,7 @@ export function BadgeShowcase({ badges: propBadges, maxDisplay = 8, showViewAll 
         const res = await fetch("/api/badges");
         if (res.ok) {
           const data = await res.json();
-          setBadges(data.badges || []);
+          setFetchedBadges(data.badges || []);
         }
       } catch (e) {
         console.error("Failed to load badges", e);
@@ -50,6 +49,8 @@ export function BadgeShowcase({ badges: propBadges, maxDisplay = 8, showViewAll 
 
     fetchBadges();
   }, [propBadges]);
+
+  const badges = propBadges || fetchedBadges;
 
   const earnedBadges = badges.filter((b) => b.earnedAt);
   const displayBadges = earnedBadges.slice(0, maxDisplay);
