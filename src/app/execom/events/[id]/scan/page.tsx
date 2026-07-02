@@ -5,13 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Camera, CheckCircle2, XCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { BrowserQRCodeReader, IScannerControls } from "@zxing/browser";
 import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface ScanResult {
   success: boolean;
@@ -27,50 +20,21 @@ export default function ExecomScanPage({ params }: { params: Promise<{ id: strin
   const [processing, setProcessing] = useState(false);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
   const [scanCount, setScanCount] = useState(0);
-  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
-  const [selectedCamera, setSelectedCamera] = useState<string>("");
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
-  const processingRef = useRef(false);
-  const eventIdRef = useRef(eventId);
-  
-  useEffect(() => {
-    eventIdRef.current = eventId;
-  }, [eventId]);
+  const prevDeviceIdRef = useRef("");
 
-  // Enumerate cameras on load
-  useEffect(() => {
-    async function initCameras() {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter((d) => d.kind === "videoinput");
-        setCameras(videoDevices);
-        if (videoDevices.length > 0) {
-          // Default to environment/back camera if available, otherwise first camera
-          const backCam = videoDevices.find((d) => 
-            d.label.toLowerCase().includes("back") || 
-            d.label.toLowerCase().includes("rear") ||
-            d.label.toLowerCase().includes("environment") ||
-            d.label.toLowerCase().includes("0")
-          );
-          setSelectedCamera(backCam ? backCam.deviceId : videoDevices[0].deviceId);
-        }
-      } catch (e) {
-        console.error("Failed to list cameras", e);
-      }
-    }
-    initCameras();
-  }, []);
-
-  const processQRCode = async (qrData: string) => {
+  const processQRCode = useCallback(async (qrData: string) => {
+    if (processing) return;
     setProcessing(true);
-    processingRef.current = true;
     try {
       const res = await fetch("/api/attendance/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: eventIdRef.current, qrData }),
+        body: JSON.stringify({ eventId, qrData }),
       });
       const data = await res.json();
       
@@ -83,69 +47,79 @@ export default function ExecomScanPage({ params }: { params: Promise<{ id: strin
 
       if (data.success) {
         setScanCount((prev) => prev + 1);
+        // Play success sound
         const audio = new Audio("https://cdn.freesound.org/previews/404/404743_1427504-lq.mp3");
         audio.play().catch(() => {});
       } else {
+        // Play error sound
         const audio = new Audio("https://cdn.freesound.org/previews/415/415510_5121236-lq.mp3");
         audio.play().catch(() => {});
       }
-    } catch (_err) {
+    } catch {
       setLastResult({
         success: false,
         message: "Failed to connect to server",
       });
     }
     
-    // Cool down to prevent double scans of the same code
+    // Cool down to prevent double scans
     setTimeout(() => {
       setProcessing(false);
-      processingRef.current = false;
     }, 2000);
-  };
-
-  const processQRCodeRef = useRef(processQRCode);
-  useEffect(() => {
-    processQRCodeRef.current = processQRCode;
-  });
+  }, [processing, eventId]);
 
   const startScanning = useCallback(async () => {
     if (!videoRef.current) return;
     try {
       const codeReader = new BrowserQRCodeReader();
       
-      // Update camera list again after permission is granted to get accurate labels
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter((d) => d.kind === "videoinput");
-      setCameras(videoDevices);
+      // Request permission and list devices
+      const videoDevices = await BrowserQRCodeReader.listVideoInputDevices();
+      setDevices(videoDevices);
+
+      let deviceId = selectedDeviceId;
+      if (!deviceId && videoDevices.length > 0) {
+        const backCam = videoDevices.find((d) => 
+          d.label.toLowerCase().includes("back") || 
+          d.label.toLowerCase().includes("rear") || 
+          d.label.toLowerCase().includes("environment")
+        );
+        deviceId = backCam ? backCam.deviceId : videoDevices[0].deviceId;
+        setSelectedDeviceId(deviceId);
+      }
 
       const constraints: MediaStreamConstraints = {
-        video: {
-          deviceId: selectedCamera ? { exact: selectedCamera } : undefined,
-          facingMode: selectedCamera ? undefined : "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          advanced: [{ focusMode: "continuous" } as unknown as MediaTrackConstraintSet],
-        },
+        video: deviceId
+          ? {
+              deviceId: { exact: deviceId },
+              advanced: [{ focusMode: "continuous" } as unknown as MediaTrackConstraintSet],
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            }
+          : {
+              facingMode: "environment",
+              advanced: [{ focusMode: "continuous" } as unknown as MediaTrackConstraintSet],
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
       };
 
       const controls = await codeReader.decodeFromConstraints(
         constraints,
         videoRef.current,
-        (result, _error, _controls) => {
-          if (result && !processingRef.current) {
-            processingRef.current = true;
-            processQRCodeRef.current(result.getText());
+        (result) => {
+          if (result && !processing) {
+            processQRCode(result.getText());
           }
         }
       );
       controlsRef.current = controls;
       setScanning(true);
       setLastResult(null);
-    } catch (error) {
-      console.error("Camera error:", error);
-      alert("Unable to access camera. Please grant camera permissions.");
+    } catch {
+      alert("Unable to access camera. Please grant camera permissions or select a different camera source.");
     }
-  }, [selectedCamera]);
+  }, [processing, selectedDeviceId, processQRCode]);
 
   const stopScanning = useCallback(() => {
     if (controlsRef.current) {
@@ -155,17 +129,18 @@ export default function ExecomScanPage({ params }: { params: Promise<{ id: strin
     setScanning(false);
   }, []);
 
-  // Restart scanning automatically if camera is changed while scanning
+  // Hot-swap camera source when dropdown changes
   useEffect(() => {
-    if (scanning) {
+    if (prevDeviceIdRef.current !== selectedDeviceId && controlsRef.current) {
+      prevDeviceIdRef.current = selectedDeviceId;
       stopScanning();
       const timer = setTimeout(() => {
         startScanning();
-      }, 300);
+      }, 500);
       return () => clearTimeout(timer);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCamera]);
+    prevDeviceIdRef.current = selectedDeviceId;
+  }, [selectedDeviceId, startScanning, stopScanning]);
 
   useEffect(() => {
     return () => {
@@ -190,24 +165,23 @@ export default function ExecomScanPage({ params }: { params: Promise<{ id: strin
         </p>
       </div>
 
-      {/* Camera Selector */}
-      {cameras.length > 1 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-1.5">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">
-            Select Camera (switch if blurry)
-          </span>
-          <Select value={selectedCamera} onValueChange={setSelectedCamera}>
-            <SelectTrigger className="rounded-xl">
-              <SelectValue placeholder="Choose Camera" />
-            </SelectTrigger>
-            <SelectContent>
-              {cameras.map((device, index) => (
-                <SelectItem key={device.deviceId} value={device.deviceId}>
-                  {device.label || `Camera ${index + 1}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Camera Selection Dropdown */}
+      {devices.length > 1 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-2">
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">
+            Select Camera Source
+          </label>
+          <select
+            value={selectedDeviceId}
+            onChange={(e) => setSelectedDeviceId(e.target.value)}
+            className="w-full text-sm font-medium border border-gray-200 rounded-xl px-3 py-2 bg-white text-[#1a1a2e] focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+          >
+            {devices.map((device, i) => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label || `Camera ${i + 1}`}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
@@ -219,7 +193,7 @@ export default function ExecomScanPage({ params }: { params: Promise<{ id: strin
               const stream = videoRef.current.srcObject as MediaStream;
               const track = stream.getVideoTracks()[0];
               try {
-                // Trigger autofocus on tap
+                // Try to trigger autofocus on tap for supported devices
                 await track.applyConstraints({
                   advanced: [{ focusMode: "single-shot" } as unknown as MediaTrackConstraintSet]
                 });

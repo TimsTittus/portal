@@ -14,8 +14,10 @@ import {
   UserCheck,
   Loader2,
   QrCode,
+  FileDown,
 } from "lucide-react";
 import Link from "next/link";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 interface EventDetail {
   id: string;
@@ -31,6 +33,7 @@ interface EventDetail {
   registrationLimit: number | null;
   registrationCount: number;
   attendanceCount: number;
+  posterUrl: string | null;
 }
 
 interface Registration {
@@ -104,6 +107,155 @@ export default function ExecomEventDetailPage() {
     }
   };
 
+  const downloadPDF = async () => {
+    if (!event) return;
+    try {
+      const pdfDoc = await PDFDocument.create();
+      let page = pdfDoc.addPage([600, 800]);
+      const { height } = page.getSize();
+      
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      const drawHeader = (p: typeof page) => {
+        p.drawText(event.title, {
+          x: 50,
+          y: height - 60,
+          size: 18,
+          font: fontBold,
+          color: rgb(0.1, 0.1, 0.18),
+        });
+
+        const eventInfo = `Type: ${event.eventType.replace("_", " ").toUpperCase()}   |   Venue: ${event.venue || "N/A"}`;
+        p.drawText(eventInfo, {
+          x: 50,
+          y: height - 80,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.4, 0.4, 0.4),
+        });
+
+        const dateStr = `Date: ${new Date(event.startDatetime).toLocaleDateString("en-IN")}   |   Time: ${new Date(event.startDatetime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+        p.drawText(dateStr, {
+          x: 50,
+          y: height - 95,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.4, 0.4, 0.4),
+        });
+
+        p.drawText("Registered Attendees List", {
+          x: 50,
+          y: height - 130,
+          size: 12,
+          font: fontBold,
+          color: rgb(0.1, 0.1, 0.18),
+        });
+
+        const tableTop = height - 150;
+        p.drawLine({
+          start: { x: 50, y: tableTop },
+          end: { x: 550, y: tableTop },
+          thickness: 1,
+          color: rgb(0.8, 0.8, 0.8),
+        });
+
+        const headers = ["Name", "Department", "Batch", "Status"];
+        const colWidths = [180, 110, 100, 110];
+        const startX = 50;
+
+        let currentX = startX;
+        for (let i = 0; i < headers.length; i++) {
+          p.drawText(headers[i], {
+            x: currentX,
+            y: tableTop - 12,
+            size: 9,
+            font: fontBold,
+            color: rgb(0.2, 0.2, 0.2),
+          });
+          currentX += colWidths[i];
+        }
+
+        p.drawLine({
+          start: { x: 50, y: tableTop - 20 },
+          end: { x: 550, y: tableTop - 20 },
+          thickness: 1,
+          color: rgb(0.8, 0.8, 0.8),
+        });
+      };
+
+      drawHeader(page);
+
+      const colWidths = [180, 110, 100, 110];
+      const startX = 50;
+      let currentY = height - 190;
+
+      for (let index = 0; index < registrations.length; index++) {
+        const reg = registrations[index];
+
+        if (currentY < 50) {
+          page = pdfDoc.addPage([600, 800]);
+          drawHeader(page);
+          currentY = height - 190;
+        }
+
+        let currentX = startX;
+        
+        // Name
+        page.drawText(reg.student.name, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.1, 0.1, 0.1),
+        });
+        currentX += colWidths[0];
+
+        // Dept
+        page.drawText(reg.student.department, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+        currentX += colWidths[1];
+
+        // Batch
+        page.drawText(reg.student.batch, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+        currentX += colWidths[2];
+
+        // Status
+        const statusText = reg.attended ? "Attended" : "Registered";
+        page.drawText(statusText, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontBold,
+          color: reg.attended ? rgb(0.1, 0.6, 0.2) : rgb(0.5, 0.5, 0.5),
+        });
+
+        currentY -= 20;
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${event.title.replace(/\s+/g, "_")}_Attendance.pdf`;
+      link.click();
+    } catch (e) {
+      console.error("PDF generation failed:", e);
+      alert("Failed to generate PDF. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse max-w-3xl">
@@ -150,6 +302,16 @@ export default function ExecomEventDetailPage() {
         <ArrowLeft className="w-4 h-4" />
         Back to events
       </button>
+
+      {event.posterUrl && (
+        <div className="w-full rounded-2xl border border-gray-100 overflow-hidden bg-gray-50 max-h-80 flex items-center justify-center shadow-sm">
+          <img
+            src={event.posterUrl}
+            alt="Event Poster"
+            className="w-full object-contain max-h-80"
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
@@ -307,9 +469,21 @@ export default function ExecomEventDetailPage() {
         </div>
       </div>
 
-      {/* Registrations Table */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
-        <h3 className="text-lg font-bold text-[#1a1a2e] mb-4">Registered Students ({registrations.length})</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-[#1a1a2e]">Registered Students ({registrations.length})</h3>
+          {registrations.length > 0 && (
+            <Button
+              onClick={downloadPDF}
+              variant="outline"
+              size="icon"
+              title="Download PDF Report"
+              className="rounded-xl border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer w-8 h-8 flex items-center justify-center bg-white"
+            >
+              <FileDown className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         {registrations.length === 0 ? (
           <p className="text-gray-500 text-sm">No students registered yet.</p>
         ) : (

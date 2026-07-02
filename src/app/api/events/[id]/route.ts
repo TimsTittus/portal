@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { events, eventRegistrations, eventAttendance, studentProfiles } from "@/db/schema";
+import { events, eventRegistrations, eventAttendance } from "@/db/schema";
 import { eq, count, and } from "drizzle-orm";
 import { updateEventSchema } from "@/lib/validators";
 import { NextResponse } from "next/server";
+import { studentProfiles } from "@/db/schema";
 
 async function getSession() {
   return await auth.api.getSession({ headers: await headers() });
@@ -32,29 +33,25 @@ export async function GET(
     .from(eventAttendance)
     .where(eq(eventAttendance.eventId, id));
 
+  const session = await getSession();
   let isRegistered = false;
-  try {
-    const session = await getSession();
-    if (session) {
-      const [profile] = await db
+  if (session) {
+    const [profile] = await db
+      .select({ id: studentProfiles.id })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, session.user.id));
+    if (profile) {
+      const existing = await db
         .select()
-        .from(studentProfiles)
-        .where(eq(studentProfiles.userId, session.user.id));
-      if (profile) {
-        const existing = await db
-          .select()
-          .from(eventRegistrations)
-          .where(
-            and(
-              eq(eventRegistrations.eventId, id),
-              eq(eventRegistrations.studentId, profile.id)
-            )
-          );
-        isRegistered = existing.length > 0;
-      }
+        .from(eventRegistrations)
+        .where(
+          and(
+            eq(eventRegistrations.eventId, id),
+            eq(eventRegistrations.studentId, profile.id)
+          )
+        );
+      isRegistered = existing.length > 0;
     }
-  } catch (e) {
-    console.error("Failed to fetch registration status:", e);
   }
 
   return NextResponse.json({

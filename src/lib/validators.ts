@@ -45,6 +45,7 @@ export const createEventSchema = z.object({
   registrationLimit: z.number().int().positive().optional(),
   participationPoints: z.number().int().default(10),
   volunteerPoints: z.number().int().default(20),
+  posterUrl: z.string().optional(),
 });
 
 export const updateEventSchema = createEventSchema.partial().extend({

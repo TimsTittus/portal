@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   Loader2,
   TrendingUp,
+  CheckCircle2,
 } from "lucide-react";
 
 interface EventDetail {
@@ -28,6 +29,7 @@ interface EventDetail {
   registrationLimit: number | null;
   registrationCount: number;
   attendanceCount: number;
+  posterUrl: string | null;
 }
 
 export default function EventDetailPage() {
@@ -46,7 +48,7 @@ export default function EventDetailPage() {
         if (res.ok) {
           const data = await res.json();
           setEvent(data);
-          setRegistered(!!data.registered);
+          setRegistered(data.registered || false);
         }
       } catch (error) {
         console.error("Failed to fetch event:", error);
@@ -118,6 +120,16 @@ export default function EventDetailPage() {
         <ArrowLeft className="w-4 h-4" />
         Back to events
       </button>
+
+      {event.posterUrl && (
+        <div className="w-full rounded-2xl border border-gray-100 overflow-hidden bg-gray-50 max-h-80 flex items-center justify-center shadow-sm">
+          <img
+            src={event.posterUrl}
+            alt="Event Poster"
+            className="w-full object-contain max-h-80"
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
@@ -217,7 +229,7 @@ export default function EventDetailPage() {
           </div>
         )}
 
-        {/* Register button */}
+        {/* Register button / status */}
         <div className="mt-8">
           {message && (
             <div
@@ -230,16 +242,24 @@ export default function EventDetailPage() {
               {message}
             </div>
           )}
-          <Button
-            onClick={handleRegister}
-            disabled={registering || registered}
-            className="w-full md:w-auto h-11 px-8 rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a4e] text-white font-medium"
-          >
-            {registering ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : null}
-            {registered ? "Registered ✓" : "Register for Event"}
-          </Button>
+          
+          {registered ? (
+            <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm text-green-700 font-semibold flex items-center gap-2 w-fit">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <span>Registered ✓</span>
+            </div>
+          ) : (
+            <Button
+              onClick={handleRegister}
+              disabled={registering}
+              className="w-full md:w-auto h-11 px-8 rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a4e] text-white font-medium cursor-pointer"
+            >
+              {registering ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Register for Event
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -28,6 +28,8 @@ export default function NewEventPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [posterPreview, setPosterPreview] = useState("");
+  const [compressing, setCompressing] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -39,7 +41,56 @@ export default function NewEventPage() {
     registrationLimit: "",
     participationPoints: "10",
     volunteerPoints: "20",
+    posterUrl: "",
   });
+
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCompressing(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.7);
+          setPosterPreview(compressed);
+          handleChange("posterUrl", compressed);
+        }
+        setCompressing(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePoster = () => {
+    setPosterPreview("");
+    handleChange("posterUrl", "");
+  };
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -53,6 +104,7 @@ export default function NewEventPage() {
     try {
       const body = {
         ...form,
+        posterUrl: form.posterUrl || undefined,
         startDatetime: new Date(form.startDatetime).toISOString(),
         endDatetime: new Date(form.endDatetime).toISOString(),
         registrationDeadline: form.registrationDeadline
@@ -125,6 +177,52 @@ export default function NewEventPage() {
             rows={4}
             placeholder="What's this event about?"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Event Poster (Optional)</Label>
+          <div className="flex flex-col gap-3">
+            <input
+              id="poster"
+              type="file"
+              accept="image/*"
+              onChange={handlePosterChange}
+              className="hidden"
+            />
+            <div className="flex items-center gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl cursor-pointer bg-white"
+                onClick={() => document.getElementById("poster")?.click()}
+                disabled={compressing}
+              >
+                {compressing ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : null}
+                Choose Image
+              </Button>
+              {posterPreview && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 cursor-pointer bg-white"
+                  onClick={handleRemovePoster}
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+            {posterPreview && (
+              <div className="relative mt-2 border border-gray-100 rounded-xl overflow-hidden w-full max-w-sm aspect-video bg-gray-50 flex items-center justify-center">
+                <img
+                  src={posterPreview}
+                  alt="Poster Preview"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
