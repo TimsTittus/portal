@@ -137,7 +137,7 @@ export const createIdeaSchema = z.object({
 // Type exports
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type CreateEventInput = z.infer<typeof createEventSchema>;
+export type CreateEventInput = z.input<typeof createEventSchema>;
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
