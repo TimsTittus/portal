@@ -12,6 +12,8 @@ const TABS = [
   { key: "hackathon", label: "Hackathons" },
   { key: "seminar", label: "Seminars" },
   { key: "competition", label: "Competitions" },
+  { key: "bootcamp", label: "Bootcamps" },
+  { key: "innovation_challenge", label: "Innovation Challenges" },
 ];
 
 interface EventData {
@@ -23,6 +25,7 @@ interface EventData {
   endDatetime: string;
   status: string | null;
   participationPoints: number | null;
+  posterUrl: string | null;
 }
 
 export default function StudentEventsPage() {
@@ -34,7 +37,7 @@ export default function StudentEventsPage() {
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const res = await fetch("/api/events?status=published&limit=50");
+        const res = await fetch("/api/events?status=active&limit=50");
         const data = await res.json();
         setEvents(data.events || []);
       } catch (error) {

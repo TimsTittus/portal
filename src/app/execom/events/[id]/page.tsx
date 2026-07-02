@@ -13,7 +13,11 @@ import {
   TrendingUp,
   UserCheck,
   Loader2,
+  QrCode,
+  FileDown,
 } from "lucide-react";
+import Link from "next/link";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 interface EventDetail {
   id: string;
@@ -29,6 +33,21 @@ interface EventDetail {
   registrationLimit: number | null;
   registrationCount: number;
   attendanceCount: number;
+  posterUrl: string | null;
+}
+
+interface Registration {
+  id: string;
+  role: string;
+  registeredAt: string;
+  student: {
+    id: string;
+    name: string;
+    department: string;
+    batch: string;
+    iecdId: string;
+  };
+  attended: boolean;
 }
 
 export default function ExecomEventDetailPage() {
@@ -38,13 +57,22 @@ export default function ExecomEventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
 
   useEffect(() => {
     async function fetchEvent() {
       try {
-        const res = await fetch(`/api/events/${params.id}`);
-        if (res.ok) {
-          setEvent(await res.json());
+        const [eventRes, regRes] = await Promise.all([
+          fetch(`/api/events/${params.id}`),
+          fetch(`/api/events/${params.id}/registrations`),
+        ]);
+        
+        if (eventRes.ok) {
+          setEvent(await eventRes.json());
+        }
+        if (regRes.ok) {
+          const regData = await regRes.json();
+          setRegistrations(regData.registrations || []);
         }
       } catch (error) {
         console.error("Failed to fetch event:", error);
@@ -76,6 +104,155 @@ export default function ExecomEventDetailPage() {
       setMessage("Something went wrong");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!event) return;
+    try {
+      const pdfDoc = await PDFDocument.create();
+      let page = pdfDoc.addPage([600, 800]);
+      const { height } = page.getSize();
+      
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      const drawHeader = (p: typeof page) => {
+        p.drawText(event.title, {
+          x: 50,
+          y: height - 60,
+          size: 18,
+          font: fontBold,
+          color: rgb(0.1, 0.1, 0.18),
+        });
+
+        const eventInfo = `Type: ${event.eventType.replace("_", " ").toUpperCase()}   |   Venue: ${event.venue || "N/A"}`;
+        p.drawText(eventInfo, {
+          x: 50,
+          y: height - 80,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.4, 0.4, 0.4),
+        });
+
+        const dateStr = `Date: ${new Date(event.startDatetime).toLocaleDateString("en-IN")}   |   Time: ${new Date(event.startDatetime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+        p.drawText(dateStr, {
+          x: 50,
+          y: height - 95,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.4, 0.4, 0.4),
+        });
+
+        p.drawText("Registered Attendees List", {
+          x: 50,
+          y: height - 130,
+          size: 12,
+          font: fontBold,
+          color: rgb(0.1, 0.1, 0.18),
+        });
+
+        const tableTop = height - 150;
+        p.drawLine({
+          start: { x: 50, y: tableTop },
+          end: { x: 550, y: tableTop },
+          thickness: 1,
+          color: rgb(0.8, 0.8, 0.8),
+        });
+
+        const headers = ["Name", "Department", "Batch", "Status"];
+        const colWidths = [180, 110, 100, 110];
+        const startX = 50;
+
+        let currentX = startX;
+        for (let i = 0; i < headers.length; i++) {
+          p.drawText(headers[i], {
+            x: currentX,
+            y: tableTop - 12,
+            size: 9,
+            font: fontBold,
+            color: rgb(0.2, 0.2, 0.2),
+          });
+          currentX += colWidths[i];
+        }
+
+        p.drawLine({
+          start: { x: 50, y: tableTop - 20 },
+          end: { x: 550, y: tableTop - 20 },
+          thickness: 1,
+          color: rgb(0.8, 0.8, 0.8),
+        });
+      };
+
+      drawHeader(page);
+
+      const colWidths = [180, 110, 100, 110];
+      const startX = 50;
+      let currentY = height - 190;
+
+      for (let index = 0; index < registrations.length; index++) {
+        const reg = registrations[index];
+
+        if (currentY < 50) {
+          page = pdfDoc.addPage([600, 800]);
+          drawHeader(page);
+          currentY = height - 190;
+        }
+
+        let currentX = startX;
+        
+        // Name
+        page.drawText(reg.student.name, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.1, 0.1, 0.1),
+        });
+        currentX += colWidths[0];
+
+        // Dept
+        page.drawText(reg.student.department, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+        currentX += colWidths[1];
+
+        // Batch
+        page.drawText(reg.student.batch, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+        currentX += colWidths[2];
+
+        // Status
+        const statusText = reg.attended ? "Attended" : "Registered";
+        page.drawText(statusText, {
+          x: currentX,
+          y: currentY,
+          size: 9,
+          font: fontBold,
+          color: reg.attended ? rgb(0.1, 0.6, 0.2) : rgb(0.5, 0.5, 0.5),
+        });
+
+        currentY -= 20;
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${event.title.replace(/\s+/g, "_")}_Attendance.pdf`;
+      link.click();
+    } catch (e) {
+      console.error("PDF generation failed:", e);
+      alert("Failed to generate PDF. Please try again.");
     }
   };
 
@@ -118,13 +295,23 @@ export default function ExecomEventDetailPage() {
   return (
     <div className="max-w-3xl space-y-6">
       {/* Back button */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1a1a2e] transition-colors"
+      <Link
+        href="/execom/events"
+        className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1a1a2e] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to events
-      </button>
+      </Link>
+
+      {event.posterUrl && (
+        <div className="w-full rounded-2xl border border-gray-100 overflow-hidden bg-gray-50 max-h-80 flex items-center justify-center shadow-sm">
+          <img
+            src={event.posterUrl}
+            alt="Event Poster"
+            className="w-full object-contain max-h-80"
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
@@ -137,12 +324,20 @@ export default function ExecomEventDetailPage() {
               {event.title}
             </h1>
           </div>
-          <Badge
-            variant="secondary"
-            className={`capitalize shrink-0 ${statusColors[event.status || "draft"]}`}
-          >
-            {event.status}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge
+              variant="secondary"
+              className={`capitalize shrink-0 ${statusColors[event.status || "draft"]}`}
+            >
+              {event.status}
+            </Badge>
+            <Link href={`/execom/events/${event.id}/scan`}>
+              <Button size="sm" className="bg-[#1a1a2e] text-white hover:bg-[#2a2a4e] rounded-xl">
+                <QrCode className="w-4 h-4 mr-2" />
+                Scan QR
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Meta */}
@@ -236,26 +431,93 @@ export default function ExecomEventDetailPage() {
               {message}
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            {["draft", "published", "ongoing", "completed", "cancelled"]
-              .filter((s) => s !== event.status)
-              .map((status) => (
+          <div className="flex flex-wrap gap-3">
+            {(() => {
+              const currentStatus = event.status || "draft";
+              const actions: Array<{ label: string; value: string; className: string }> = [];
+              
+              if (currentStatus === "draft") {
+                actions.push({ label: "Publish Event", value: "published", className: "bg-blue-600 hover:bg-blue-700 text-white border-transparent" });
+              } else if (currentStatus === "published") {
+                actions.push({ label: "Start Event (Ongoing)", value: "ongoing", className: "bg-green-600 hover:bg-green-700 text-white border-transparent" });
+                actions.push({ label: "Cancel Event", value: "cancelled", className: "bg-red-50 hover:bg-red-100 text-red-600 border-red-200" });
+              } else if (currentStatus === "ongoing") {
+                actions.push({ label: "Mark as Completed", value: "completed", className: "bg-purple-600 hover:bg-purple-700 text-white border-transparent" });
+              }
+              
+              if (actions.length === 0) {
+                return <p className="text-sm text-gray-500">No further status updates available.</p>;
+              }
+              
+              return actions.map((action) => (
                 <Button
-                  key={status}
+                  key={action.value}
                   variant="outline"
                   size="sm"
-                  className="rounded-xl capitalize"
+                  className={`rounded-xl font-medium shadow-sm transition-all ${action.className}`}
                   disabled={updating}
-                  onClick={() => updateStatus(status)}
+                  onClick={() => updateStatus(action.value)}
                 >
                   {updating ? (
-                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : null}
-                  {status}
+                  {action.label}
                 </Button>
-              ))}
+              ));
+            })()}
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-[#1a1a2e]">Registered Students ({registrations.length})</h3>
+          {registrations.length > 0 && (
+            <Button
+              onClick={downloadPDF}
+              variant="outline"
+              size="icon"
+              title="Download PDF Report"
+              className="rounded-xl border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer w-8 h-8 flex items-center justify-center bg-white"
+            >
+              <FileDown className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+        {registrations.length === 0 ? (
+          <p className="text-gray-500 text-sm">No students registered yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="bg-gray-50 text-gray-700">
+                <tr>
+                  <th className="px-4 py-3 rounded-tl-xl rounded-bl-xl">Name</th>
+                  <th className="px-4 py-3">IEDC ID</th>
+                  <th className="px-4 py-3">Dept & Year</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3 rounded-tr-xl rounded-br-xl">Attended</th>
+                </tr>
+              </thead>
+              <tbody>
+                {registrations.map((reg) => (
+                  <tr key={reg.id} className="border-b border-gray-50 last:border-0">
+                    <td className="px-4 py-3 font-medium text-gray-900">{reg.student.name}</td>
+                    <td className="px-4 py-3">{reg.student.iecdId}</td>
+                    <td className="px-4 py-3">{reg.student.department} ({reg.student.batch})</td>
+                    <td className="px-4 py-3 capitalize">{reg.role}</td>
+                    <td className="px-4 py-3">
+                      {reg.attended ? (
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-none">Present</Badge>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

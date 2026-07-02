@@ -18,6 +18,7 @@ interface EventCardProps {
   registrationLimit?: number | null;
   linkPrefix?: string;
   className?: string;
+  posterUrl?: string | null;
 }
 
 const eventTypeIcons: Record<string, string> = {
@@ -50,6 +51,7 @@ export function EventCard({
   registrationLimit,
   linkPrefix = "/student/events",
   className,
+  posterUrl,
 }: EventCardProps) {
   const startDate = new Date(startDatetime);
   const formattedDate = startDate.toLocaleDateString("en-IN", {
@@ -70,9 +72,27 @@ export function EventCard({
           className
         )}
       >
-        {/* Event type icon */}
-        <div className="w-12 h-12 rounded-xl bg-[#1a1a2e] flex items-center justify-center shrink-0 text-xl">
-          {eventTypeIcons[eventType] || "📅"}
+        {/* Event poster or placeholder */}
+        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-gray-50 border border-gray-100/50">
+          {posterUrl ? (
+            <img
+              src={posterUrl}
+              alt={title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className={cn(
+              "w-full h-full flex items-center justify-center text-xl font-bold bg-gradient-to-br",
+              eventType === "workshop" ? "from-blue-500 to-indigo-600 text-white" :
+              eventType === "hackathon" ? "from-purple-500 to-pink-600 text-white" :
+              eventType === "bootcamp" ? "from-orange-400 to-red-600 text-white" :
+              eventType === "seminar" ? "from-green-400 to-teal-600 text-white" :
+              eventType === "competition" ? "from-red-400 to-rose-600 text-white" :
+              "from-yellow-400 to-amber-600 text-white"
+            )}>
+              {eventTypeIcons[eventType] || "📅"}
+            </div>
+          )}
         </div>
 
         {/* Content */}

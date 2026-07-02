@@ -160,7 +160,7 @@ export default function ScanPage() {
       {/* Last result */}
       {lastResult && (
         <div
-          className={`rounded-2xl border p-4 flex items-center gap-3 animate-in slide-in-from-bottom-2 duration-300 ${
+          className={`rounded-2xl border p-4 flex items-center gap-3 ${
             lastResult.success
               ? "bg-green-50 border-green-100"
               : "bg-red-50 border-red-100"

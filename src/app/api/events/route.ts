@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { events, eventRegistrations, studentProfiles } from "@/db/schema";
-import { eq, desc, and, sql, count } from "drizzle-orm";
+import { events, eventRegistrations, studentProfiles, users } from "@/db/schema";
+import { eq, desc, and, sql, count, inArray } from "drizzle-orm";
 import { createEventSchema } from "@/lib/validators";
 import { NextResponse } from "next/server";
 
@@ -17,7 +17,9 @@ export async function GET(request: Request) {
   const status = searchParams.get("status") || "published";
 
   const conditions = [eq(events.isDeleted, false)];
-  if (status !== "all") {
+  if (status === "active") {
+    conditions.push(inArray(events.status, ["published", "ongoing"]));
+  } else if (status !== "all") {
     conditions.push(eq(events.status, status as "draft" | "published" | "ongoing" | "completed" | "cancelled"));
   }
 
@@ -63,10 +65,12 @@ export async function POST(request: Request) {
     );
   }
 
+  const { volunteerEmails, ...eventData } = parsed.data;
+
   const [event] = await db
     .insert(events)
     .values({
-      ...parsed.data,
+      ...eventData,
       startDatetime: new Date(parsed.data.startDatetime),
       endDatetime: new Date(parsed.data.endDatetime),
       registrationDeadline: parsed.data.registrationDeadline
@@ -76,6 +80,23 @@ export async function POST(request: Request) {
       status: "draft",
     })
     .returning();
+
+  if (role === "execom" && volunteerEmails && volunteerEmails.length > 0) {
+    const profiles = await db
+      .select({ studentId: studentProfiles.id })
+      .from(studentProfiles)
+      .innerJoin(users, eq(studentProfiles.userId, users.id))
+      .where(inArray(users.email, volunteerEmails));
+
+    if (profiles.length > 0) {
+      const regValues = profiles.map((p) => ({
+        eventId: event.id,
+        studentId: p.studentId,
+        role: "volunteer" as "volunteer" | "participant",
+      }));
+      await db.insert(eventRegistrations).values(regValues);
+    }
+  }
 
   return NextResponse.json(event, { status: 201 });
 }
