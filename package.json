@@ -9,12 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.108.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
     "@upstash/redis": "^1.38.0",
     "@zxing/browser": "^0.2.0",
+    "@zxing/library": "^0.22.0",
     "better-auth": "^1.6.15",
     "bullmq": "^5.78.0",
     "class-variance-authority": "^0.7.1",
@@ -29,7 +31,7 @@
     "radix-ui": "^1.5.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-hook-form": "^7.78.0",
+    "react-hook-form": "^7.80.0",
     "recharts": "^3.8.1",
     "resend": "^6.12.4",
     "shadcn": "^4.11.0",

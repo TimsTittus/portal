@@ -31,10 +31,6 @@ export default function StudentBadgesPage() {
   const [checking, setChecking] = useState(false);
   const [filter, setFilter] = useState<string>("all");
 
-  useEffect(() => {
-    fetchBadges();
-  }, []);
-
   async function fetchBadges() {
     try {
       const res = await fetch("/api/badges");
@@ -48,6 +44,11 @@ export default function StudentBadgesPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchBadges();
+  }, []);
 
   async function handleCheck() {
     setChecking(true);
@@ -98,7 +99,7 @@ export default function StudentBadgesPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
+    <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -132,7 +133,7 @@ export default function StudentBadgesPage() {
         </div>
         <div className="w-full h-3 bg-[#EAE3D2]/40 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#6EA2F8] to-[#84C974] rounded-full transition-all duration-700 ease-out"
+            className="h-full bg-gradient-to-r from-[#6EA2F8] to-[#84C974] rounded-full transition-all duration-300 ease-out"
             style={{
               width: badges.length > 0
                 ? `${(earnedBadges.length / badges.length) * 100}%`

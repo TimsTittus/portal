@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
+import { Button } from "@/components/ui/button";
 
 interface EventData {
   id: string;
@@ -35,13 +38,21 @@ export default function ExecomEventsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]">
-          All Events
-        </h1>
-        <p className="text-gray-500 mt-1 text-sm">
-          Review and manage all portal events
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]">
+            All Events
+          </h1>
+          <p className="text-gray-500 mt-1 text-sm">
+            Review and manage all portal events
+          </p>
+        </div>
+        <Link href="/execom/events/create">
+          <Button className="rounded-xl bg-[#1a1a2e] text-white hover:bg-[#2a2a4e]">
+            <Plus className="w-4 h-4 mr-2" />
+            Create Event
+          </Button>
+        </Link>
       </div>
 
       {loading ? (

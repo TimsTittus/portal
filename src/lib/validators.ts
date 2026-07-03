@@ -39,18 +39,22 @@ export const createEventSchema = z.object({
     "innovation_challenge",
   ]),
   venue: z.string().optional(),
-  startDatetime: z.string().datetime(),
-  endDatetime: z.string().datetime(),
-  registrationDeadline: z.string().datetime().optional(),
+  startDatetime: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid datetime"),
+  endDatetime: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid datetime"),
+  registrationDeadline: z.string().refine((val) => !val || !isNaN(Date.parse(val)), "Invalid datetime").optional(),
   registrationLimit: z.number().int().positive().optional(),
   participationPoints: z.number().int().default(10),
   volunteerPoints: z.number().int().default(20),
+  posterUrl: z.string().optional(),
+  volunteerEmails: z.array(z.string()).optional(),
 });
 
 export const updateEventSchema = createEventSchema.partial().extend({
   status: z
     .enum(["draft", "published", "ongoing", "completed", "cancelled"])
     .optional(),
+  participationPoints: z.number().int().optional(),
+  volunteerPoints: z.number().int().optional(),
 });
 
 // ============================================================
@@ -133,7 +137,7 @@ export const createIdeaSchema = z.object({
 // Type exports
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type CreateEventInput = z.infer<typeof createEventSchema>;
+export type CreateEventInput = z.input<typeof createEventSchema>;
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

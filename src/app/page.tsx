@@ -84,7 +84,7 @@ export default function LandingPage() {
         <div className="lg:col-span-5 flex justify-center relative">
           {/* Pastel decorative circle background */}
           <div className="absolute inset-0 bg-[#EAE3D2]/35 rounded-full filter blur-3xl -z-10 scale-90" />
-          <div className="relative w-full max-w-[420px] aspect-square rounded-[2.5rem] border-4 border-[#1A1A2E] bg-[#EAE3D2]/20 overflow-hidden shadow-2xl transition-transform hover:rotate-1 duration-500">
+          <div className="relative w-full max-w-[420px] aspect-square rounded-[2.5rem] border-4 border-[#1A1A2E] bg-[#EAE3D2]/20 overflow-hidden shadow-2xl transition-transform hover:rotate-1 duration-200">
             <Image
               src="/illustrations/hero-innovator.png"
               alt="IEDC Innovation"

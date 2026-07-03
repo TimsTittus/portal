@@ -57,6 +57,7 @@ interface DashboardData {
     endDatetime: string;
     status: string | null;
     participationPoints: number | null;
+    posterUrl: string | null;
   }>;
 }
 
@@ -100,13 +101,20 @@ export default function StudentDashboard() {
       try {
         const [profileRes, eventsRes] = await Promise.all([
           fetch("/api/student/profile"),
-          fetch("/api/events?status=published&limit=5"),
+          fetch("/api/events?status=active&limit=30"),
         ]);
 
         const profile = profileRes.ok ? await profileRes.json() : null;
         const eventsData = eventsRes.ok ? await eventsRes.json() : { events: [] };
 
-        setData({ profile, events: eventsData.events || [] });
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const filteredEvents = (eventsData.events || []).filter((e: { startDatetime: string }) => {
+          const eventDate = new Date(e.startDatetime);
+          return eventDate >= oneWeekAgo;
+        });
+
+        setData({ profile, events: filteredEvents });
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -144,7 +152,7 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
+    <div className="space-y-8 max-w-5xl">
       {/* Greeting Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -167,7 +175,7 @@ export default function StudentDashboard() {
           href="/student/profile"
           className="bg-[#1A1A2E] text-[#FBF5E8] rounded-[2rem] p-6 md:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-[#1A1A2E] shadow-xl shadow-black/10 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group cursor-pointer w-full block"
         >
-          <div className="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform duration-500" />
+          <div className="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full -mr-8 -mt-8 group-hover:scale-110 transition-transform duration-200" />
           <div className="space-y-2 relative z-10">
             <p className="text-xs uppercase tracking-widest text-[#FBF5E8]/60 font-bold">Official IEDC ID</p>
             <p className="text-2xl md:text-3.5xl font-serif font-black tracking-wide">
@@ -281,11 +289,7 @@ export default function StudentDashboard() {
           ref={contentRef}
           className="transition-all duration-300 ease-in-out overflow-hidden"
           style={{
-            maxHeight: historyOpen
-              ? contentRef.current
-                ? `${contentRef.current.scrollHeight}px`
-                : "600px"
-              : "0px",
+            maxHeight: historyOpen ? "1000px" : "0px",
             opacity: historyOpen ? 1 : 0,
           }}
         >

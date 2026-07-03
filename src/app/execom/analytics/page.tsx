@@ -111,7 +111,7 @@ export default function ExecomAnalyticsPage() {
                   </span>
                   <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
                     <div
-                      className="bg-[#1a1a2e] h-full rounded-full transition-all duration-500"
+                      className="bg-[#1a1a2e] h-full rounded-full transition-all duration-200"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>

@@ -115,7 +115,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl bg-white rounded-[2.5rem] border border-[#EAE3D2]/60 shadow-xl shadow-black/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full max-w-4xl bg-white rounded-[2.5rem] border border-[#EAE3D2]/60 shadow-xl shadow-black/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
       <div className="grid grid-cols-1 md:grid-cols-2">
         {/* Left side: Premium Branding & Illustration */}
         <div className="hidden md:flex flex-col justify-between p-10 bg-[#FAF6EE] border-r border-[#EAE3D2]/40 relative">
@@ -144,7 +144,7 @@ export default function RegisterPage() {
             <img
               src="/illustrations/student-jumping-red.png"
               alt="Innovator Girl"
-              className="object-contain max-h-[260px] w-auto animate-float"
+              className="object-contain max-h-[260px] w-auto"
             />
           </div>
 

@@ -76,7 +76,7 @@ export function BadgeCard({ name, description, icon, criteria, earnedAt, compact
     >
       {/* Earned glow effect */}
       {isEarned && (
-        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <div className="absolute -top-4 -right-4 w-20 h-20 bg-[#F59E0B]/10 rounded-full blur-xl" />
           <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-[#6EA2F8]/10 rounded-full blur-xl" />
         </div>
