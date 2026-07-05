@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,8 @@ function getDashboardPath(role?: string): string {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -60,7 +62,10 @@ export default function LoginPage() {
 
       // Determine destination based on user role
       const userRole = (result.data as { user?: { role?: string } })?.user?.role;
-      const destination = getDashboardPath(userRole);
+      let destination = getDashboardPath(userRole);
+      if (userRole === "student" && redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")) {
+        destination = redirectTo;
+      }
 
       // Brief pause so the user sees the success feedback, then navigate
       await new Promise((resolve) => setTimeout(resolve, 1200));

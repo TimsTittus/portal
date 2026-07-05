@@ -1,9 +1,24 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star, Shield, Zap, Award } from "lucide-react";
+import { ArrowRight, Shield, Zap, Award } from "lucide-react";
+import { db } from "@/db";
+import { events } from "@/db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
+import { EventCard } from "@/components/events/event-card";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const activeEvents = await db
+    .select()
+    .from(events)
+    .where(
+      and(
+        eq(events.isDeleted, false),
+        inArray(events.status, ["published", "ongoing"])
+      )
+    )
+    .orderBy(desc(events.startDatetime))
+    .limit(6);
   return (
     <div className="min-h-screen bg-[#FBF5E8] text-[#1A1A2E] flex flex-col selection:bg-[#D8615C] selection:text-white">
       {/* Navigation */}
@@ -94,6 +109,44 @@ export default function LandingPage() {
             />
           </div>
         </div>
+      </section>
+
+      {/* Featured Events Section */}
+      <section className="px-6 md:px-16 py-16 max-w-7xl mx-auto w-full space-y-10 border-t border-[#EAE3D2]/30">
+        <div className="space-y-3 text-left">
+          <h2 className="text-3xl md:text-5xl font-serif font-black text-[#1A1A2E]">
+            Featured Events
+          </h2>
+          <p className="text-gray-500 text-sm md:text-base font-medium">
+            Explore workshops, hackathons, and bootcamps happening in the hub.
+          </p>
+        </div>
+
+        {activeEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {activeEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                id={event.id}
+                title={event.title}
+                eventType={event.eventType}
+                venue={event.venue}
+                startDatetime={event.startDatetime.toISOString()}
+                endDatetime={event.endDatetime.toISOString()}
+                status={event.status}
+                participationPoints={event.participationPoints}
+                posterUrl={event.posterUrl}
+                linkPrefix="/student/events"
+                className="bg-white rounded-[2rem] border border-[#EAE3D2]/70 p-6 shadow-sm hover:shadow-md hover:border-[#EAE3D2] transition-all cursor-pointer flex flex-col justify-between"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-[#FAF6EE] rounded-[2.5rem] border border-[#EAE3D2]/60 p-12 text-center w-full">
+            <p className="text-[#1A1A2E] font-serif font-bold text-lg">No active events found</p>
+            <p className="text-gray-400 text-xs mt-1">Check back later for exciting upcoming events!</p>
+          </div>
+        )}
       </section>
 
       {/* Cards Section */}

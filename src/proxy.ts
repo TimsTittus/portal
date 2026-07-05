@@ -34,6 +34,11 @@ export async function proxy(request: NextRequest) {
   // Check protected routes
   for (const [prefix, allowedRoles] of Object.entries(protectedRoutes)) {
     if (pathname.startsWith(prefix)) {
+      // Allow guests to view student event details page
+      if (prefix === "/student" && pathname.match(/^\/student\/events\/[a-zA-Z0-9-]+$/)) {
+        continue;
+      }
+
       if (!session) {
         return NextResponse.redirect(new URL("/auth/login", request.url));
       }

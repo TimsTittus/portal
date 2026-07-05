@@ -7,10 +7,12 @@ import { ArrowLeft } from "lucide-react";
 import { EventDetail } from "./types";
 import { StudentEventHeader } from "./_components/student-event-header";
 import { StudentRegistrationAction } from "./_components/student-registration-action";
+import { useSession } from "@/lib/auth-client";
 
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -36,6 +38,10 @@ export default function EventDetailPage() {
   }, [params.id]);
 
   const handleRegister = async () => {
+    if (!session) {
+      router.push(`/auth/login?redirectTo=/student/events/${params.id}`);
+      return;
+    }
     setRegistering(true);
     setMessage("");
     try {
