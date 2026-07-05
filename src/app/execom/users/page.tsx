@@ -73,14 +73,40 @@ export default function ExecomUsersPage() {
     }
   }
 
+  const execomRolesList = [
+    { value: "ceo", label: "CEO (Chief Executive Officer)" },
+    { value: "cto", label: "CTO (Chief Technical Officer)" },
+    { value: "to", label: "TO (Technical Officer)" },
+    { value: "cfo", label: "CFO (Chief Finance Officer)" },
+    { value: "fo", label: "FO (Finance Officer)" },
+    { value: "cco", label: "CCO (Chief Creative Officer)" },
+    { value: "co", label: "CO (Creative Officer)" },
+    { value: "cio", label: "CIO (Chief Innovation Officer)" },
+    { value: "io", label: "IO (Innovation Officer)" },
+    { value: "cmo", label: "CMO (Chief Marketing Officer)" },
+    { value: "mo", label: "MO (Marketing Officer)" },
+    { value: "coo", label: "COO (Chief Operations Officer)" },
+    { value: "oo", label: "OO (Operations Officer)" },
+    { value: "cso", label: "CSO (Chief Skills Officer)" },
+    { value: "so", label: "SO (Skills Officer)" },
+    { value: "cvo", label: "CVO (Chief Vibes Officer)" },
+    { value: "vo", label: "VO (Vibes Officer)" },
+    { value: "cwit", label: "CWIT (Chief Women in Tech)" },
+    { value: "wit", label: "WIT (Women in Tech)" },
+  ];
+
   const roleColors: Record<string, string> = {
     coordinator: "bg-blue-50 text-blue-700",
-    execom: "bg-purple-50 text-purple-700",
     faculty: "bg-green-50 text-green-700",
   };
+  execomRolesList.forEach((r) => {
+    roleColors[r.value] = "bg-purple-50 text-purple-700";
+  });
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {" "}
+      {/* Container */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]">
           User Management
@@ -118,8 +144,12 @@ export default function ExecomUsersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="coordinator">Coordinator</SelectItem>
-                <SelectItem value="execom">Execom</SelectItem>
                 <SelectItem value="faculty">Faculty</SelectItem>
+                {execomRolesList.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

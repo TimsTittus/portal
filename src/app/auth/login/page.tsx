@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "@/lib/auth-client";
@@ -10,20 +10,43 @@ import { Button } from "@/components/ui/button";
 import { loginSchema } from "@/lib/validators";
 import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 
+const execomRoles = [
+  "ceo",
+  "cto",
+  "to",
+  "cfo",
+  "fo",
+  "cco",
+  "co",
+  "cio",
+  "io",
+  "cmo",
+  "mo",
+  "coo",
+  "oo",
+  "cso",
+  "so",
+  "cvo",
+  "vo",
+  "cwit",
+  "wit",
+];
+
 function getDashboardPath(role?: string): string {
+  if (role && execomRoles.includes(role)) {
+    return "/execom/analytics";
+  }
   switch (role) {
     case "faculty":
       return "/faculty/reports";
     case "coordinator":
       return "/coordinator/events";
-    case "execom":
-      return "/execom/analytics";
     default:
       return "/student/dashboard";
   }
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo");
@@ -226,5 +249,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

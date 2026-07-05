@@ -5,7 +5,7 @@ CREATE TYPE "public"."idea_stage" AS ENUM('submitted', 'under_review', 'approved
 CREATE TYPE "public"."opportunity_type" AS ENUM('internship', 'hackathon', 'competition', 'grant', 'startup_program');--> statement-breakpoint
 CREATE TYPE "public"."project_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
 CREATE TYPE "public"."registration_role" AS ENUM('participant', 'volunteer');--> statement-breakpoint
-CREATE TYPE "public"."user_role" AS ENUM('student', 'coordinator', 'execom', 'faculty');--> statement-breakpoint
+CREATE TYPE "public"."user_role" AS ENUM('student', 'coordinator', 'faculty', 'ceo', 'cto', 'to', 'cfo', 'fo', 'cco', 'co', 'cio', 'io', 'cmo', 'mo', 'coo', 'oo', 'cso', 'so', 'cvo', 'vo', 'cwit', 'wit');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" uuid NOT NULL,

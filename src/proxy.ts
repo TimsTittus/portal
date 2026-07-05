@@ -3,11 +3,33 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { createClient as createSupabaseClient } from "@/utils/supabase/middleware";
 
+export const execomRoles = [
+  "ceo",
+  "cto",
+  "to",
+  "cfo",
+  "fo",
+  "cco",
+  "co",
+  "cio",
+  "io",
+  "cmo",
+  "mo",
+  "coo",
+  "oo",
+  "cso",
+  "so",
+  "cvo",
+  "vo",
+  "cwit",
+  "wit",
+];
+
 const protectedRoutes: Record<string, string[]> = {
   "/student": ["student"],
-  "/coordinator": ["coordinator", "execom"],
-  "/execom": ["execom"],
-  "/faculty": ["faculty", "execom"],
+  "/coordinator": ["coordinator", ...execomRoles],
+  "/execom": execomRoles,
+  "/faculty": ["faculty", ...execomRoles],
 };
 
 const authRoutes = ["/auth/login", "/auth/register"];
@@ -53,13 +75,14 @@ export async function proxy(request: NextRequest) {
 }
 
 function getDashboardForRole(role: string): string {
+  if (execomRoles.includes(role)) {
+    return "/execom/analytics";
+  }
   switch (role) {
     case "student":
       return "/student/dashboard";
     case "coordinator":
       return "/coordinator/events";
-    case "execom":
-      return "/execom/analytics";
     case "faculty":
       return "/faculty/reports";
     default:

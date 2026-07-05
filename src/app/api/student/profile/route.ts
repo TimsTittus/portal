@@ -10,6 +10,28 @@ async function getSession() {
   return await auth.api.getSession({ headers: await headers() });
 }
 
+const execomRoles = [
+  "ceo",
+  "cto",
+  "to",
+  "cfo",
+  "fo",
+  "cco",
+  "co",
+  "cio",
+  "io",
+  "cmo",
+  "mo",
+  "coo",
+  "oo",
+  "cso",
+  "so",
+  "cvo",
+  "vo",
+  "cwit",
+  "wit",
+];
+
 const PRIVATE_FIELDS = new Set([
   "id", "userId", "qrHmacSecret", "qrCodeUrl", "isDeleted",
 ]);
@@ -38,8 +60,9 @@ export async function GET(request: Request) {
   }
 
   const role = session.user.role;
+  const isStudentOrExecom = role === "student" || execomRoles.includes(role || "");
 
-  if (role === "student") {
+  if (isStudentOrExecom) {
     const [profile] = await db
       .select()
       .from(studentProfiles)
@@ -83,12 +106,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ ...safe, role, email: session.user.email });
 
   } else {
-    // execom — return minimal identity, no internal IDs
-    return NextResponse.json({
-      name: session.user.name,
-      email: session.user.email,
-      role,
-    });
+    return NextResponse.json({ error: "Unsupported role" }, { status: 400 });
   }
 }
 
@@ -99,7 +117,9 @@ export async function PUT(request: Request) {
   const role = session.user.role;
   const body = (await request.json()) as Record<string, unknown>;
 
-  if (role === "student") {
+  const isStudentOrExecom = role === "student" || execomRoles.includes(role || "");
+
+  if (isStudentOrExecom) {
     if (typeof body.linkedinUrl === "string") {
       let val = body.linkedinUrl.trim();
       if (val && !val.startsWith("http://") && !val.startsWith("https://")) {
@@ -166,18 +186,6 @@ export async function PUT(request: Request) {
 
     const { id, userId, ...safe } = updated;
     return NextResponse.json({ ...safe, role, email: session.user.email });
-
-  } else if (role === "execom") {
-    const updateData: Record<string, unknown> = {};
-    if (typeof body.name === "string" && body.name.trim().length >= 2) updateData.name = body.name.trim();
-
-    const [updated] = await db
-      .update(users)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(eq(users.id, session.user.id))
-      .returning();
-
-    return NextResponse.json({ name: updated.name, email: updated.email, role });
   }
 
   return NextResponse.json({ error: "Unsupported role" }, { status: 400 });

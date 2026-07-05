@@ -7,6 +7,8 @@ import { events } from "@/db/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { EventCard } from "@/components/events/event-card";
 
+export const dynamic = "force-dynamic";
+
 export default async function LandingPage() {
   const activeEvents = await db
     .select()

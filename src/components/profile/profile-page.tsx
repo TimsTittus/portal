@@ -233,11 +233,32 @@ export default function ProfilePage() {
     .toUpperCase()
     .slice(0, 2);
 
+  const execomRoles = [
+    "ceo",
+    "cto",
+    "to",
+    "cfo",
+    "fo",
+    "cco",
+    "co",
+    "cio",
+    "io",
+    "cmo",
+    "mo",
+    "coo",
+    "oo",
+    "cso",
+    "so",
+    "cvo",
+    "vo",
+    "cwit",
+    "wit",
+  ];
+
   const userRole = profile.role || "student";
-  const isStudent = userRole === "student";
+  const isStudent = userRole === "student" || execomRoles.includes(userRole);
   const isCoordinator = userRole === "coordinator";
   const isFaculty = userRole === "faculty";
-  const isExecom = userRole === "execom";
 
   return (
     <div className="max-w-3xl space-y-6">

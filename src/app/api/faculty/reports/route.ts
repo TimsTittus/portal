@@ -19,7 +19,10 @@ export async function GET() {
   }
 
   const role = (session.user as Record<string, unknown>).role as string;
-  if (!["faculty", "execom"].includes(role)) {
+  const execomRoles = [
+    "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+  ];
+  if (role !== "faculty" && !execomRoles.includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

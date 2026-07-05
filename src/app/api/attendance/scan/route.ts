@@ -14,7 +14,10 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const role = (session.user as Record<string, unknown>).role as string;
-  if (!["coordinator", "execom"].includes(role)) {
+  const execomRoles = [
+    "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+  ];
+  if (role !== "coordinator" && !execomRoles.includes(role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
