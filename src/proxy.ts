@@ -55,7 +55,6 @@ export async function proxy(request: NextRequest) {
      const isCollegeEmail =
       email.endsWith("@sjcetpalai.ac.in") ||
       email.endsWith(".sjcetpalai.ac.in")
-
     if (!isCollegeEmail) {
       return NextResponse.redirect(
         new URL("/auth/login?error=Only SJCET college email IDs are allowed.", request.url)
