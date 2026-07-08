@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Edit3, Save, Loader2, Globe, LogOut, ShieldAlert } from "lucide-react";
+import { QrCode, Edit3, Save, Loader2, Globe, LogOut } from "lucide-react";
 import { LinkedinIcon, GithubIcon } from "@/components/ui/icons";
 import {
   Dialog,
@@ -20,107 +20,58 @@ import {
 import { getGithubUsername } from "@/lib/utils";
 import { BadgeShowcase } from "@/components/badges/badge-showcase";
 
-const QR_WINDOW = 30; // seconds — matches server constant
-
-function DynamicQR({ onOpenModal }: { onOpenModal: (url: string) => void }) {
+function ProfileQR({ onOpenModal }: { onOpenModal: (url: string) => void }) {
   const [qrDataUrl, setQrDataUrl] = useState("");
-  const [countdown, setCountdown] = useState(QR_WINDOW);
-  const [rotating, setRotating] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const fetchQR = useCallback(async function fetchQR() {
-    const res = await fetch("/api/student/qr", { cache: "no-store" });
-    if (!res.ok) return;
-    const { qrDataUrl, expiresIn } = await res.json();
-    setQrDataUrl(qrDataUrl);
-    setCountdown(expiresIn);
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(fetchQR, expiresIn * 1000);
+  useEffect(() => {
+    async function fetchQR() {
+      try {
+        const res = await fetch("/api/student/qr");
+        if (res.ok) {
+          const { qrDataUrl } = await res.json();
+          setQrDataUrl(qrDataUrl);
+        }
+      } catch (err) {
+        console.error("Failed to load QR code", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchQR();
   }, []);
 
-  // Tick the countdown every second
-  useEffect(() => {
-    fetchQR();
-    tickRef.current = setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000);
-    return () => {
-      clearInterval(tickRef.current!);
-      clearTimeout(timerRef.current!);
-    };
-  }, [fetchQR]);
-
-  const rotateSecret = async () => {
-    setRotating(true);
-    try {
-      const res = await fetch("/api/student/qr", { method: "POST" });
-      if (res.ok) {
-        const { qrDataUrl } = await res.json();
-        setQrDataUrl(qrDataUrl);
-        setCountdown(QR_WINDOW);
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(fetchQR, QR_WINDOW * 1000);
-      }
-    } finally {
-      setRotating(false);
-    }
-  };
-
-  const progress = countdown / QR_WINDOW; // 1 → 0
-  const degrees = Math.round(progress * 360);
-  const ringColor = countdown <= 5 ? "#ef4444" : countdown <= 10 ? "#f97316" : "#1a1a2e";
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8 min-h-[220px]">
+        <Loader2 className="w-6 h-6 animate-spin text-[#1a1a2e]" />
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col items-center gap-3">
-      {/* QR with countdown ring */}
-      <div className="relative cursor-pointer" onClick={() => qrDataUrl && onOpenModal(qrDataUrl)}>
-        {/* Conic-gradient countdown ring */}
-        <div
-          style={{
-            background: `conic-gradient(${ringColor} ${degrees}deg, #e5e7eb ${degrees}deg)`,
-            borderRadius: "50%",
-            padding: "4px",
-            display: "inline-flex",
-            transition: "background 0.5s",
-          }}
-        >
-          <div className="bg-white rounded-full p-1">
-            {qrDataUrl ? (
-              <img
-                src={qrDataUrl}
-                alt="Dynamic QR Code"
-                className="w-44 h-44 rounded-xl block"
-              />
-            ) : (
-              <div className="w-44 h-44 rounded-xl bg-gray-100 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-              </div>
-            )}
+      <div
+        className="relative cursor-pointer border-2 border-[#1a1a2e]/5 rounded-2xl p-2 bg-white shadow-sm hover:shadow-md transition-all active:scale-95"
+        onClick={() => qrDataUrl && onOpenModal(qrDataUrl)}
+      >
+        {qrDataUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={qrDataUrl}
+            alt="Attendance QR Code"
+            className="w-44 h-44 rounded-xl object-contain block"
+          />
+        ) : (
+          <div className="w-44 h-44 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 text-xs">
+            Failed to load QR
           </div>
-        </div>
-        {/* Countdown badge */}
-        <span
-          className="absolute bottom-2 right-2 text-[11px] font-bold px-1.5 py-0.5 rounded-md text-white tabular-nums shadow"
-          style={{ background: ringColor, transition: "background 0.5s" }}
-        >
-          {countdown}s
-        </span>
+        )}
       </div>
 
       <p className="text-xs text-gray-400 text-center max-w-[200px] leading-relaxed">
-        Refreshes every 30 s · Click to enlarge
+        Click to enlarge QR Code
       </p>
-
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={rotating}
-        className="rounded-xl text-xs cursor-pointer border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-        onClick={rotateSecret}
-      >
-        {rotating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <ShieldAlert className="w-3 h-3 mr-1" />}
-        Rotate Secret
-      </Button>
     </div>
   );
 }
@@ -233,11 +184,32 @@ export default function ProfilePage() {
     .toUpperCase()
     .slice(0, 2);
 
+  const execomRoles = [
+    "ceo",
+    "cto",
+    "to",
+    "cfo",
+    "fo",
+    "cco",
+    "co",
+    "cio",
+    "io",
+    "cmo",
+    "mo",
+    "coo",
+    "oo",
+    "cso",
+    "so",
+    "cvo",
+    "vo",
+    "cwit",
+    "wit",
+  ];
+
   const userRole = profile.role || "student";
-  const isStudent = userRole === "student";
+  const isStudent = userRole === "student" || execomRoles.includes(userRole);
   const isCoordinator = userRole === "coordinator";
   const isFaculty = userRole === "faculty";
-  const isExecom = userRole === "execom";
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -262,6 +234,9 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div className="flex flex-col items-center gap-3">
             <Avatar className="h-24 w-24 bg-[#1a1a2e]">
+              {session?.user?.image && (
+                <AvatarImage src={session.user.image} alt={profile.name} className="object-cover" />
+              )}
               <AvatarFallback className="bg-[#1a1a2e] text-white text-2xl font-bold">
                 {initials}
               </AvatarFallback>
@@ -285,7 +260,7 @@ export default function ProfilePage() {
               <h2 className="text-xl font-bold text-[#1a1a2e]">
                 {profile.name}
               </h2>
-              <Badge className="bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-semibold capitalize px-2 py-0.5 border">
+              <Badge className="bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold uppercase px-2 py-0.5 border">
                 {userRole}
               </Badge>
             </div>
@@ -443,9 +418,9 @@ export default function ProfilePage() {
           </Button>
         </div>
 
-        {/* Dynamic QR Code */}
+        {/* Static QR Code */}
         {isStudent && showQR && (
-          <DynamicQR onOpenModal={(url) => { setModalQrUrl(url); setIsQRModalOpen(true); }} />
+          <ProfileQR onOpenModal={(url) => { setModalQrUrl(url); setIsQRModalOpen(true); }} />
         )}
       </div>
 

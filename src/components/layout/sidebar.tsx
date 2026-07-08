@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -9,8 +10,6 @@ import {
   FolderOpen,
   Award,
   User,
-  QrCode,
-  Lightbulb,
   Settings,
   BarChart3,
   Users,
@@ -19,7 +18,7 @@ import {
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 
 interface NavItem {
   label: string;
@@ -35,6 +34,30 @@ interface SidebarProps {
 export function Sidebar({ items, role }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session } = useSession();
+
+  const [points, setPoints] = useState<number | null>(null);
+
+  const name = session?.user?.name || "User";
+  const userRole = ((session?.user as Record<string, unknown>)?.role as string) || role;
+  const execomRoles = [
+    "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+  ];
+  const isExecom = execomRoles.includes(userRole || "");
+  const roleDisplay = isExecom ? (userRole || "").toUpperCase() : "";
+
+  useEffect(() => {
+    if (session?.user && (userRole === "student" || isExecom)) {
+      fetch("/api/student/profile")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && typeof data.totalPoints === "number") {
+            setPoints(data.totalPoints);
+          }
+        })
+        .catch((err) => console.error("Error loading points:", err));
+    }
+  }, [session, userRole, isExecom]);
 
   const handleSignOut = async () => {
     try {
@@ -87,7 +110,38 @@ export function Sidebar({ items, role }: SidebarProps) {
       </nav>
 
       {/* Bottom section */}
-      <div className="px-2 lg:px-3 pb-4 space-y-1 border-t border-white/10 pt-4">
+      <div className="px-2 lg:px-3 pb-4 space-y-2 border-t border-white/10 pt-4">
+        {/* User profile section inside sidebar (Desktop only) */}
+        {session?.user && (
+          <div className="hidden lg:flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/5 mb-1.5">
+            <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
+              {session.user.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={session.user.image} alt={name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white text-xs font-bold">
+                  {name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold truncate text-white leading-tight">{name}</p>
+              <div className="flex flex-wrap items-center gap-1 mt-1">
+                {roleDisplay && (
+                  <span className="text-[10px] font-black text-amber-400 bg-amber-400/10 px-1 py-0.2 rounded border border-amber-400/20 uppercase tracking-wide">
+                    {roleDisplay}
+                  </span>
+                )}
+                {points !== null && (
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-1 py-0.2 rounded border border-emerald-400/20">
+                    ✨ {points} pts
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <button
           onClick={handleSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/10 transition-all duration-200 w-full"

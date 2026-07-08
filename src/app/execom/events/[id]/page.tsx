@@ -2,53 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  ArrowLeft,
-  TrendingUp,
-  UserCheck,
-  Loader2,
-  QrCode,
-  FileDown,
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-
-interface EventDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  eventType: string;
-  venue: string | null;
-  startDatetime: string;
-  endDatetime: string;
-  status: string | null;
-  participationPoints: number | null;
-  volunteerPoints: number | null;
-  registrationLimit: number | null;
-  registrationCount: number;
-  attendanceCount: number;
-  posterUrl: string | null;
-}
-
-interface Registration {
-  id: string;
-  role: string;
-  registeredAt: string;
-  student: {
-    id: string;
-    name: string;
-    department: string;
-    batch: string;
-    iecdId: string;
-  };
-  attended: boolean;
-}
+import { EventDetail, Registration } from "./types";
+import { EventHeader } from "./_components/event-header";
+import { StatusActions } from "./_components/status-actions";
+import { RegistrationsTable } from "./_components/registrations-table";
+import { PosterUpload } from "@/components/events/poster-upload";
 
 export default function ExecomEventDetailPage() {
   const params = useParams();
@@ -58,6 +30,88 @@ export default function ExecomEventDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+
+  // Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editEventType, setEditEventType] = useState("");
+  const [editVenue, setEditVenue] = useState("");
+  const [editStartDatetime, setEditStartDatetime] = useState("");
+  const [editEndDatetime, setEditEndDatetime] = useState("");
+  const [editRegistrationLimit, setEditRegistrationLimit] = useState<number | "">("");
+  const [editParticipationPoints, setEditParticipationPoints] = useState<number>(10);
+  const [editVolunteerPoints, setEditVolunteerPoints] = useState<number>(20);
+  const [editPosterUrl, setEditPosterUrl] = useState("");
+  const [editRegistrationDeadline, setEditRegistrationDeadline] = useState("");
+  const [editVolunteerEmails, setEditVolunteerEmails] = useState("");
+
+  const startEdit = () => {
+    if (!event) return;
+    setEditTitle(event.title);
+    setEditDescription(event.description || "");
+    setEditEventType(event.eventType);
+    setEditVenue(event.venue || "");
+    
+    const formatForInput = (isoString: string) => {
+      const d = new Date(isoString);
+      const pad = (num: number) => String(num).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+    
+    setEditStartDatetime(formatForInput(event.startDatetime));
+    setEditEndDatetime(formatForInput(event.endDatetime));
+    setEditRegistrationLimit(event.registrationLimit || "");
+    setEditParticipationPoints(event.participationPoints || 10);
+    setEditVolunteerPoints(event.volunteerPoints || 20);
+    setEditPosterUrl(event.posterUrl || "");
+    setEditRegistrationDeadline(event.registrationDeadline ? formatForInput(event.registrationDeadline) : "");
+    setEditVolunteerEmails(event.volunteerEmails?.join(", ") || "");
+    setIsEditing(true);
+    setMessage("");
+  };
+
+  const saveEventDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdating(true);
+    setMessage("");
+    try {
+      const body = {
+        title: editTitle,
+        description: editDescription || undefined,
+        eventType: editEventType,
+        venue: editVenue || undefined,
+        startDatetime: new Date(editStartDatetime).toISOString(),
+        endDatetime: new Date(editEndDatetime).toISOString(),
+        registrationDeadline: editRegistrationDeadline ? new Date(editRegistrationDeadline).toISOString() : null,
+        registrationLimit: editRegistrationLimit === "" ? null : Number(editRegistrationLimit),
+        participationPoints: Number(editParticipationPoints),
+        volunteerPoints: Number(editVolunteerPoints),
+        posterUrl: editPosterUrl || null,
+        volunteerEmails: editVolunteerEmails.split(",").map((email) => email.trim()).filter(Boolean),
+      };
+
+      const res = await fetch(`/api/events/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setEvent((prev) => (prev ? { ...prev, ...updated } : prev));
+        setMessage("Event details updated successfully");
+        setIsEditing(false);
+      } else {
+        const data = await res.json();
+        setMessage(data.error || "Failed to update details");
+      }
+    } catch {
+      setMessage("Something went wrong");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchEvent() {
@@ -272,8 +326,8 @@ export default function ExecomEventDetailPage() {
         <p className="text-gray-500 font-medium">Event not found</p>
         <Button
           variant="outline"
-          className="mt-4 rounded-xl"
-          onClick={() => router.back()}
+          className="mt-4 rounded-xl cursor-pointer"
+          onClick={() => router.push("/execom/events")}
         >
           Go back
         </Button>
@@ -281,244 +335,147 @@ export default function ExecomEventDetailPage() {
     );
   }
 
-  const start = new Date(event.startDatetime);
-  const end = new Date(event.endDatetime);
-
-  const statusColors: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-600",
-    published: "bg-blue-50 text-blue-700",
-    ongoing: "bg-green-50 text-green-700",
-    completed: "bg-purple-50 text-purple-700",
-    cancelled: "bg-red-50 text-red-700",
-  };
-
   return (
     <div className="max-w-3xl space-y-6">
-      {/* Back button */}
-      <Link
-        href="/execom/events"
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1a1a2e] transition-colors w-fit"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to events
-      </Link>
-
-      {event.posterUrl && (
-        <div className="w-full rounded-2xl border border-gray-100 overflow-hidden bg-gray-50 max-h-80 flex items-center justify-center shadow-sm">
-          <img
-            src={event.posterUrl}
-            alt="Event Poster"
-            className="w-full object-contain max-h-80"
-          />
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <Badge variant="secondary" className="capitalize mb-3">
-              {event.eventType.replace("_", " ")}
-            </Badge>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]">
-              {event.title}
-            </h1>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge
-              variant="secondary"
-              className={`capitalize shrink-0 ${statusColors[event.status || "draft"]}`}
-            >
-              {event.status}
-            </Badge>
-            <Link href={`/execom/events/${event.id}/scan`}>
-              <Button size="sm" className="bg-[#1a1a2e] text-white hover:bg-[#2a2a4e] rounded-xl">
-                <QrCode className="w-4 h-4 mr-2" />
-                Scan QR
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Meta */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
-          <div className="flex items-center gap-3 text-gray-600">
-            <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">
-                {start.toLocaleDateString("en-IN", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 text-gray-600">
-            <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
-            </div>
-            <p className="text-sm font-medium">
-              {start.toLocaleTimeString("en-IN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}{" "}
-              –{" "}
-              {end.toLocaleTimeString("en-IN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-
-          {event.venue && (
-            <div className="flex items-center gap-3 text-gray-600">
-              <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <p className="text-sm font-medium">{event.venue}</p>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 text-gray-600">
-            <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
-              <Users className="w-4 h-4" />
-            </div>
-            <p className="text-sm font-medium">
-              {event.registrationCount} registered
-              {event.registrationLimit
-                ? ` / ${event.registrationLimit} max`
-                : ""}
-            </p>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="flex flex-wrap gap-3 mt-6">
-          <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-xl text-sm font-medium">
-            <TrendingUp className="w-4 h-4" />+
-            {event.participationPoints} pts (Participant)
-          </div>
-          <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-xl text-sm font-medium">
-            <TrendingUp className="w-4 h-4" />+
-            {event.volunteerPoints} pts (Volunteer)
-          </div>
-          <div className="flex items-center gap-2 bg-purple-50 text-purple-700 px-3 py-2 rounded-xl text-sm font-medium">
-            <UserCheck className="w-4 h-4" />
-            {event.attendanceCount} attended
-          </div>
-        </div>
-
-        {/* Description */}
-        {event.description && (
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <h3 className="font-semibold text-[#1a1a2e] mb-2">About</h3>
-            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
-              {event.description}
-            </p>
-          </div>
+      {/* Top bar with back button and Edit button */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/execom/events"
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1a1a2e] transition-colors w-fit"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to events
+        </Link>
+        {!isEditing && (
+          <Button
+            className="rounded-xl bg-[#D8615C] hover:bg-[#C0504B] text-white cursor-pointer shadow-md hover:shadow-lg transition-all"
+            onClick={startEdit}
+          >
+            Edit Details
+          </Button>
         )}
+      </div>
 
-        {/* Status actions */}
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <h3 className="font-semibold text-[#1a1a2e] mb-3">Manage Status</h3>
+      {isEditing ? (
+        <form onSubmit={saveEventDetails} className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm space-y-4">
+          <h2 className="text-xl font-bold text-[#1a1a2e] mb-4">Edit Event Details</h2>
+          
           {message && (
-            <div className="mb-3 rounded-xl px-4 py-3 text-sm bg-blue-50 text-blue-700 border border-blue-100">
+            <div className="rounded-xl px-4 py-3 text-sm bg-red-50 text-red-700 border border-red-100 mb-4">
               {message}
             </div>
           )}
-          <div className="flex flex-wrap gap-3">
-            {(() => {
-              const currentStatus = event.status || "draft";
-              const actions: Array<{ label: string; value: string; className: string }> = [];
-              
-              if (currentStatus === "draft") {
-                actions.push({ label: "Publish Event", value: "published", className: "bg-blue-600 hover:bg-blue-700 text-white border-transparent" });
-              } else if (currentStatus === "published") {
-                actions.push({ label: "Start Event (Ongoing)", value: "ongoing", className: "bg-green-600 hover:bg-green-700 text-white border-transparent" });
-                actions.push({ label: "Cancel Event", value: "cancelled", className: "bg-red-50 hover:bg-red-100 text-red-600 border-red-200" });
-              } else if (currentStatus === "ongoing") {
-                actions.push({ label: "Mark as Completed", value: "completed", className: "bg-purple-600 hover:bg-purple-700 text-white border-transparent" });
-              }
-              
-              if (actions.length === 0) {
-                return <p className="text-sm text-gray-500">No further status updates available.</p>;
-              }
-              
-              return actions.map((action) => (
-                <Button
-                  key={action.value}
-                  variant="outline"
-                  size="sm"
-                  className={`rounded-xl font-medium shadow-sm transition-all ${action.className}`}
-                  disabled={updating}
-                  onClick={() => updateStatus(action.value)}
-                >
-                  {updating ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : null}
-                  {action.label}
-                </Button>
-              ));
-            })()}
-          </div>
-        </div>
-      </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-[#1a1a2e]">Registered Students ({registrations.length})</h3>
-          {registrations.length > 0 && (
-            <Button
-              onClick={downloadPDF}
-              variant="outline"
-              size="icon"
-              title="Download PDF Report"
-              className="rounded-xl border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer w-8 h-8 flex items-center justify-center bg-white"
-            >
-              <FileDown className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-        {registrations.length === 0 ? (
-          <p className="text-gray-500 text-sm">No students registered yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-gray-700">
-                <tr>
-                  <th className="px-4 py-3 rounded-tl-xl rounded-bl-xl">Name</th>
-                  <th className="px-4 py-3">IEDC ID</th>
-                  <th className="px-4 py-3">Dept & Year</th>
-                  <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3 rounded-tr-xl rounded-br-xl">Attended</th>
-                </tr>
-              </thead>
-              <tbody>
-                {registrations.map((reg) => (
-                  <tr key={reg.id} className="border-b border-gray-50 last:border-0">
-                    <td className="px-4 py-3 font-medium text-gray-900">{reg.student.name}</td>
-                    <td className="px-4 py-3">{reg.student.iecdId}</td>
-                    <td className="px-4 py-3">{reg.student.department} ({reg.student.batch})</td>
-                    <td className="px-4 py-3 capitalize">{reg.role}</td>
-                    <td className="px-4 py-3">
-                      {reg.attended ? (
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-none">Present</Badge>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-1">
+            <Label htmlFor="editTitle" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</Label>
+            <Input id="editTitle" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required />
           </div>
-        )}
-      </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="editDescription" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</Label>
+            <Textarea id="editDescription" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={4} className="resize-none" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1 flex flex-col justify-start">
+              <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Event Poster (Optional)</Label>
+              <PosterUpload
+                value={editPosterUrl}
+                onChange={(val) => setEditPosterUrl(val)}
+                onRemove={() => setEditPosterUrl("")}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="editDeadline" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registration Deadline (Optional)</Label>
+              <Input id="editDeadline" type="datetime-local" value={editRegistrationDeadline} onChange={(e) => setEditRegistrationDeadline(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Type</Label>
+              <Select value={editEventType} onValueChange={setEditEventType}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Select Event Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="workshop">Workshop</SelectItem>
+                  <SelectItem value="hackathon">Hackathon</SelectItem>
+                  <SelectItem value="bootcamp">Bootcamp</SelectItem>
+                  <SelectItem value="seminar">Seminar</SelectItem>
+                  <SelectItem value="competition">Competition</SelectItem>
+                  <SelectItem value="innovation_challenge">Innovation Challenge</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="editVenue" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Venue</Label>
+              <Input id="editVenue" value={editVenue} onChange={(e) => setEditVenue(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="editStart" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Start Date & Time</Label>
+              <Input id="editStart" type="datetime-local" value={editStartDatetime} onChange={(e) => setEditStartDatetime(e.target.value)} required />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="editEnd" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">End Date & Time</Label>
+              <Input id="editEnd" type="datetime-local" value={editEndDatetime} onChange={(e) => setEditEndDatetime(e.target.value)} required />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="editPoints" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Participation Points</Label>
+              <Input id="editPoints" type="number" value={editParticipationPoints} onChange={(e) => setEditParticipationPoints(Number(e.target.value))} required />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="editVolPoints" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Volunteer Points</Label>
+              <Input id="editVolPoints" type="number" value={editVolunteerPoints} onChange={(e) => setEditVolunteerPoints(Number(e.target.value))} required />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="editLimit" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registration Limit (Optional)</Label>
+              <Input id="editLimit" type="number" value={editRegistrationLimit} onChange={(e) => setEditRegistrationLimit(e.target.value === "" ? "" : Number(e.target.value))} placeholder="No limit" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="editVolunteers" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Volunteer Emails (comma-separated)</Label>
+            <Textarea id="editVolunteers" value={editVolunteerEmails} onChange={(e) => setEditVolunteerEmails(e.target.value)} placeholder="email1@sjcetpalai.ac.in, email2@sjcetpalai.ac.in" rows={3} className="resize-none animate-in fade-in" />
+          </div>
+
+          <div className="flex gap-2 pt-4 justify-end">
+            <Button type="button" variant="outline" className="rounded-xl" onClick={() => setIsEditing(false)} disabled={updating}>
+              Cancel
+            </Button>
+            <Button type="submit" className="rounded-xl bg-[#1a1a2e] hover:bg-[#2a2a4e] text-white" disabled={updating}>
+              {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <EventHeader event={event} />
+
+          <StatusActions
+            event={event}
+            updating={updating}
+            message={message}
+            onUpdateStatus={updateStatus}
+          />
+
+          <RegistrationsTable
+            registrations={registrations}
+            onDownloadPDF={downloadPDF}
+          />
+        </>
+      )}
     </div>
   );
 }

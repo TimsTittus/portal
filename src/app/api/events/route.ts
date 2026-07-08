@@ -51,7 +51,10 @@ export async function POST(request: Request) {
   }
 
   const role = (session.user as Record<string, unknown>).role as string;
-  if (!["coordinator", "execom"].includes(role)) {
+  const execomRoles = [
+    "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+  ];
+  if (role !== "coordinator" && !execomRoles.includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -81,7 +84,7 @@ export async function POST(request: Request) {
     })
     .returning();
 
-  if (role === "execom" && volunteerEmails && volunteerEmails.length > 0) {
+  if (execomRoles.includes(role) && volunteerEmails && volunteerEmails.length > 0) {
     const profiles = await db
       .select({ studentId: studentProfiles.id })
       .from(studentProfiles)

@@ -80,7 +80,7 @@ function hmacForWindow(uid: string, iecdId: string, secret: string, slot: number
 }
 
 export function buildDynamicQRPayload(uid: string, iecdId: string, secret: string): string {
-  const ts = currentWindowSlot();
+  const ts = 0; // Use static timestamp to prevent periodic rotation and reduce api requests
   const h = hmacForWindow(uid, iecdId, secret, ts);
   const payload: QRPayload = { uid, iid: iecdId, ts, h };
   return CIPHER_PREFIX + encryptPayload(JSON.stringify(payload));
@@ -111,10 +111,24 @@ export function verifyDynamicQRPayload(
     }
 
     const payload: QRPayload = JSON.parse(jsonStr);
-    if (!payload.uid || !payload.iid || !payload.ts || !payload.h) return { valid: false };
+    if (!payload.uid || !payload.iid || payload.h) {
+      if (payload.uid === undefined || payload.iid === undefined || payload.ts === undefined || payload.h === undefined) {
+        return { valid: false };
+      }
+    }
 
+    // Static QR code verification (ts === 0)
+    if (payload.ts === 0) {
+      const expected = hmacForWindow(payload.uid, payload.iid, storedSecret, 0);
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(payload.h, "hex"),
+        Buffer.from(expected, "hex")
+      );
+      if (isValid) return { valid: true, uid: payload.uid, iecdId: payload.iid };
+    }
+
+    // Backward compatibility for dynamic windows
     const now = currentWindowSlot();
-
     for (let i = 0; i < ACCEPTED_WINDOWS; i++) {
       const slot = now - i;
       if (slot !== payload.ts) continue;

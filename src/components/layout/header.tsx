@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Search, Menu, X, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
@@ -27,7 +27,29 @@ export function Header({ items = [], role = "user" }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [points, setPoints] = useState<number | null>(null);
+
   const name = session?.user?.name || "User";
+  const userRole = ((session?.user as Record<string, unknown>)?.role as string) || role;
+  const execomRoles = [
+    "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+  ];
+  const isExecom = execomRoles.includes(userRole || "");
+  const roleDisplay = isExecom ? (userRole || "").toUpperCase() : "";
+
+  useEffect(() => {
+    if (session?.user && (userRole === "student" || isExecom)) {
+      fetch("/api/student/profile")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && typeof data.totalPoints === "number") {
+            setPoints(data.totalPoints);
+          }
+        })
+        .catch((err) => console.error("Error loading points:", err));
+    }
+  }, [session, userRole, isExecom]);
+
   const initials = name
     .split(" ")
     .map((n: string) => n[0])
@@ -77,13 +99,31 @@ export function Header({ items = [], role = "user" }: HeaderProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          <button className="relative p-2 rounded-xl hover:bg-[#EAE3D2]/50 text-[#1A1A2E] transition-colors">
+          {/* Points display (Desktop/Mobile) */}
+          {points !== null && (
+            <div className="bg-[#1A1A2E] text-[#FBF5E8] px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1.5 border border-[#1A1A2E]/10 shrink-0">
+              <span className="opacity-90">✨</span>
+              <span>{points} pts</span>
+            </div>
+          )}
+
+          {/* Execom role display (Desktop/Mobile) */}
+          {roleDisplay && (
+            <div className="bg-[#D8615C] text-white px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider shadow-sm border border-[#D8615C]/15 shrink-0">
+              👑 {roleDisplay}
+            </div>
+          )}
+
+          <button className="relative p-2 rounded-xl hover:bg-[#EAE3D2]/50 text-[#1A1A2E] transition-colors shrink-0">
             <Bell className="w-5 h-5 text-gray-700" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
           </button>
 
-          <Link href={`/${role === "user" ? "student" : role}/profile`}>
+          <Link href={`/${role === "user" ? "student" : role}/profile`} className="shrink-0">
             <Avatar className="h-9 w-9 bg-[#1A1A2E] cursor-pointer ring-2 ring-[#1A1A2E]/10">
+              {session?.user?.image && (
+                <AvatarImage src={session.user.image} alt={name} className="object-cover" />
+              )}
               <AvatarFallback className="bg-[#1A1A2E] text-[#FBF5E8] text-xs font-semibold">
                 {initials}
               </AvatarFallback>
@@ -128,6 +168,37 @@ export function Header({ items = [], role = "user" }: HeaderProps) {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Mobile Drawer User Card */}
+            {session?.user && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 mb-4">
+                <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
+                  {session.user.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={session.user.image} alt={name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-xs font-bold">
+                      {initials}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold truncate text-white leading-tight">{name}</p>
+                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                    {roleDisplay && (
+                      <span className="text-[10px] font-black text-[#D8615C] bg-[#D8615C]/10 px-1 py-0.2 rounded border border-[#D8615C]/20 uppercase tracking-wide">
+                        {roleDisplay}
+                      </span>
+                    )}
+                    {points !== null && (
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-1 py-0.2 rounded border border-emerald-400/20">
+                        ✨ {points} pts
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Drawer Nav links */}
             {items.length > 0 && (

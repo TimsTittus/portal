@@ -19,6 +19,10 @@ export async function POST(request: Request) {
 
   let studentId: string | null = null;
 
+  const execomRoles = [
+    "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+  ];
+
   if (session.user.role === "student") {
     // Re-evaluate for the current student
     const [profile] = await db
@@ -30,7 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
     studentId = profile.id;
-  } else if (session.user.role === "execom") {
+  } else if (execomRoles.includes(session.user.role || "")) {
     // Execom can trigger for a specific student
     const body = await request.json().catch(() => ({}));
     const targetStudentId = (body as Record<string, unknown>).studentId as string | undefined;

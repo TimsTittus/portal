@@ -14,7 +14,10 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const role = (session.user as Record<string, unknown>).role as string;
-  if (!["coordinator", "execom"].includes(role)) {
+  const execomRoles = [
+    "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+  ];
+  if (role !== "coordinator" && !execomRoles.includes(role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -94,12 +97,18 @@ export async function POST(request: Request) {
       ? "event_volunteer"
       : "event_participation";
 
+  const customPoints =
+    activityType === "event_volunteer"
+      ? (event.volunteerPoints ?? 20)
+      : (event.participationPoints ?? 10);
+
   await awardPoints({
     studentId: student.id,
     activityType,
     referenceId: eventId,
     referenceType: "event",
     awardedBy: session.user.id,
+    customPoints,
   });
 
   return NextResponse.json({

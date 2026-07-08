@@ -20,8 +20,26 @@ import {
 export const userRoleEnum = pgEnum("user_role", [
   "student",
   "coordinator",
-  "execom",
   "faculty",
+  "ceo",
+  "cto",
+  "to",
+  "cfo",
+  "fo",
+  "cco",
+  "co",
+  "cio",
+  "io",
+  "cmo",
+  "mo",
+  "coo",
+  "oo",
+  "cso",
+  "so",
+  "cvo",
+  "vo",
+  "cwit",
+  "wit",
 ]);
 
 export const eventTypeEnum = pgEnum("event_type", [

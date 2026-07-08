@@ -5,6 +5,10 @@ import { allowedStaffEmails } from "@/db/schema";
 import { addStaffEmailSchema } from "@/lib/validators";
 import { NextResponse } from "next/server";
 
+const execomRoles = [
+  "ceo", "cto", "to", "cfo", "fo", "cco", "co", "cio", "io", "cmo", "mo", "coo", "oo", "cso", "so", "cvo", "vo", "cwit", "wit"
+];
+
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
@@ -12,7 +16,7 @@ export async function GET() {
   }
 
   const role = (session.user as Record<string, unknown>).role as string;
-  if (role !== "execom") {
+  if (!execomRoles.includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -27,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   const role = (session.user as Record<string, unknown>).role as string;
-  if (role !== "execom") {
+  if (!execomRoles.includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
